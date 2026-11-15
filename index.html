@@ -167,6 +167,46 @@ body.simple .tcard, body.simple #content{display:none}
 .week .wd{font-size:12px;text-align:right;white-space:nowrap}
 .week .wd span{display:inline-block;padding:1px 6px;border-radius:6px;font-weight:600;font-variant-numeric:tabular-nums}
 @media (prefers-color-scheme: dark){ .week .rn{color:#8fa4ff} }
+.scard{padding-bottom:6px}
+#sHead .sw{font-size:13px;color:var(--text-2)}
+#sHead .sw::first-letter{text-transform:uppercase}
+#sHead .sbig{display:flex;align-items:center;gap:8px;margin-top:2px}
+#sHead .ico{width:58px;height:58px}
+#sHead .stemp{font-size:46px;font-weight:650;letter-spacing:-.03em;line-height:1}
+#sHead .sright{margin-left:auto;text-align:right}
+#sHead .sdesc{font-size:15px;font-weight:600}
+#sHead .sminmax{font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums}
+#sHead .sline{font-size:12.5px;color:var(--text-2);margin-top:4px;min-height:34px}
+.scrub{position:relative;margin:8px -12px 0}
+.scroller{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.scroller::-webkit-scrollbar{display:none}
+.scroller .pad{flex:none}
+.hc{flex:none;width:52px;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 0 6px;cursor:pointer;border-radius:10px;transition:background .15s}
+.hc.midnight{border-left:1px dashed var(--border)}
+.hc.sel{background:var(--surface-2)}
+.hc .hdl{font-size:10px;font-weight:600;color:var(--text);height:13px;white-space:nowrap;text-transform:capitalize}
+.hc .hh{font-size:11px;color:var(--muted)}
+.hc svg{width:30px;height:30px}
+.hc .ht{font-size:14px;font-weight:600}
+.hc .hb{align-self:stretch;height:6px}
+.hc .hr{font-size:10.5px;color:#3d5bd9;height:13px;font-variant-numeric:tabular-nums}
+.hc .hw{display:flex;align-items:center;gap:1px;font-size:10.5px}
+.hc .hw .arrow{width:12px;height:12px}
+.hc .hw span{padding:0 4px;border-radius:5px;font-weight:600;font-variant-numeric:tabular-nums}
+.scrub .marker{position:absolute;left:50%;top:0;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-top-color:var(--text);opacity:.5;pointer-events:none}
+.legendline{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px}
+.dchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:8px;padding-bottom:4px}
+.dchips::-webkit-scrollbar{display:none}
+.dchip{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;width:62px;padding:6px 2px;border-radius:12px;border:1.5px solid transparent;background:var(--surface-2);color:var(--text);font:inherit;cursor:pointer}
+.dchip.on{border-color:var(--text);background:var(--surface)}
+.dchip .dn{font-size:12px;text-transform:capitalize;color:var(--text-2)}
+.dchip .dd{font-size:10px;color:var(--muted);margin-top:-2px}
+.dchip svg{width:30px;height:30px}
+.dchip .dt{font-size:12px;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.dchip .dt b{color:var(--text)}
+.dchip .dr{font-size:10px;color:#3d5bd9}
+@media (prefers-color-scheme: dark){ .hc .hr,.dchip .dr{color:#8fa4ff} }
+@media (max-width:600px){ .scrub{margin:8px -6px 0} }
 </style>
 </head>
 <body>
@@ -194,7 +234,7 @@ body.simple .tcard, body.simple #content{display:none}
   </section>
   <div id="content"></div>
 </main>
-<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine</footer>
+<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine · version du 15/11 23h</footer>
 
 <script>
 const DEFAULT_SPOTS = [
@@ -413,109 +453,113 @@ function rainAgreement(){
 }
 
 function renderSimple(H){
-  const nowH = new Date(); nowH.setMinutes(0,0,0);
-  const i0 = H.time.findIndex(t=>new Date(t)>=nowH && H.temperature_2m[H.time.indexOf(t)]!=null);
-  if(i0<0){ $("#simple").innerHTML = ""; return; }
   const agree = rainAgreement();
-  const st = i => sky(H.cloud_cover[i], H.precipitation[i], H.temperature_2m[i], H.is_day?H.is_day[i]!==0:true);
-
-  // --- Maintenant ---
-  const k0 = st(i0), w0 = kmh(H.wind_speed_10m[i0]), g0 = kmh(H.wind_gusts_10m[i0]), d0 = H.wind_direction_10m[i0];
-  const lw0 = localWind(d0, H.wind_speed_10m[i0]);
-
-  // --- Résumé des prochaines périodes ---
-  const periods = [];
+  const isDay = i => H.is_day ? H.is_day[i]!==0 : true;
+  const st = i => sky(H.cloud_cover[i], H.precipitation[i], H.temperature_2m[i], isDay(i));
   const hourOf = i => +H.time[i].slice(11,13);
   const dayOf = i => H.time[i].slice(0,10);
-  const today = H.time[i0].slice(0,10);
-  const slot = h => h<6?"nuit":h<12?"matin":h<18?"aprem":"soir";
-  const label = (sl,d) => { const tom = d!==today; return {nuit: tom?"cette nuit":"cette nuit", matin: tom?"demain matin":"ce matin", aprem: tom?"demain après-midi":"cet après-midi", soir: tom?"demain soir":"ce soir"}[sl]; };
-  for(let i=i0;i<Math.min(H.time.length,i0+30);i++){
-    if(H.temperature_2m[i]==null) continue;
-    const key = dayOf(i)+slot(hourOf(i)); let p = periods[periods.length-1];
-    if(!p || p.key!==key){ if(periods.length>=4) break; p={key, label:label(slot(hourOf(i)),dayOf(i)), idx:[]}; periods.push(p); }
-    p.idx.push(i);
+  const nowH = new Date(); nowH.setMinutes(0,0,0);
+  const nowStr = `${nowH.getFullYear()}-${String(nowH.getMonth()+1).padStart(2,"0")}-${String(nowH.getDate()).padStart(2,"0")}T${String(nowH.getHours()).padStart(2,"0")}:00`;
+  const today = nowStr.slice(0,10);
+  // toutes les heures disponibles à partir d'aujourd'hui 0h
+  const hrs = H.time.map((t,i)=>i).filter(i=>dayOf(i)>=today && H.temperature_2m[i]!=null);
+  if(!hrs.length){ $("#simple").innerHTML=""; return; }
+  const kNow = Math.max(0, hrs.findIndex(i=>H.time[i]>=nowStr));
+
+  // jours
+  const days = {}; hrs.forEach((i,k)=>{ const d=dayOf(i); (days[d] ||= {ks:[]}).ks.push(k); });
+  const dayList = Object.keys(days);
+  dayList.forEach(d=>{ const o=days[d]; const ii=o.ks.map(k=>hrs[k]); const tt=ii.map(i=>H.temperature_2m[i]);
+    o.lo=Math.min(...tt); o.hi=Math.max(...tt); o.rain=ii.reduce((a,i)=>a+(H.precipitation[i]||0),0);
+    const dayI = ii.filter(i=>hourOf(i)>=8&&hourOf(i)<=20); o.dayI = dayI.length?dayI:ii;
+    o.agree = Math.max(0,...o.dayI.map(i=>{const a=agree[H.time[i]];return a&&a.n?a.wet/a.n:0;}));
+    o.icon = worstOf(o.dayI); });
+  function worstOf(idx){ const c={}; idx.forEach(i=>{const k=st(i);c[k]=(c[k]||0)+1;});
+    const wet=Object.entries(c).filter(([k])=>SKY_RANK[k]>=4); if(wet.reduce((a,[,n])=>a+n,0)>=2) return wet.sort((a,b)=>b[1]-a[1])[0][0];
+    const e=Object.entries(c).sort((a,b)=>b[1]-a[1]||SKY_RANK[b[0]]-SKY_RANK[a[0]])[0][0]; return e==="night"?"clear":e==="nightpartly"?"partly":e; }
+  const fmtMm = r => r<10 ? r.toFixed(1).replace(".",",") : Math.round(r);
+
+  // résumé matin / après-midi / soir d'un jour
+  function daySummary(d){
+    const parts = [["Matin",6,12],["Après-midi",12,18],["Soir",18,24]].map(([lab,a,b])=>{
+      const ii = days[d].ks.map(k=>hrs[k]).filter(i=>hourOf(i)>=a&&hourOf(i)<b); if(ii.length<2) return null;
+      const k=worstOf(ii), r=ii.reduce((x,i)=>x+(H.precipitation[i]||0),0), g=Math.max(...ii.map(i=>kmh(H.wind_gusts_10m[i])||0));
+      let t=`<b>${lab}</b> : ${SKY_TXT[k].toLowerCase()}`; if(r>=0.5&&SKY_RANK[k]<4) t+=`, quelques gouttes`; if(r>=0.5) t+=` (${fmtMm(r)} mm)`; if(g>=55) t+=`, rafales ${Math.round(g/5)*5} km/h`; return t; }).filter(Boolean);
+    return parts.join(" · ");
   }
-  const worst = idx => { // état représentatif : le plus fréquent, la pluie l'emporte si ≥2 h
-    const c={}; idx.forEach(i=>{const k=st(i);c[k]=(c[k]||0)+1;});
-    const wet = Object.entries(c).filter(([k])=>SKY_RANK[k]>=4).reduce((a,[,n])=>a+n,0);
-    if(wet>=2) return Object.entries(c).filter(([k])=>SKY_RANK[k]>=4).sort((a,b)=>b[1]-a[1])[0][0];
-    return Object.entries(c).sort((a,b)=>b[1]-a[1]||SKY_RANK[b[0]]-SKY_RANK[a[0]])[0][0];
-  };
-  const parts = periods.filter(p=>p.idx.length>=2).map(p=>{ const k=worst(p.idx); const r=p.idx.reduce((a,i)=>a+(H.precipitation[i]||0),0); const gmax=Math.max(...p.idx.map(i=>kmh(H.wind_gusts_10m[i])||0));
-    let txt = `<b>${p.label.charAt(0).toUpperCase()+p.label.slice(1)}</b> : ${SKY_TXT[k].toLowerCase()}`;
-    if(r>=0.5 && SKY_RANK[k]<4) txt += `, quelques gouttes`;
-    if(r>=0.5) txt += ` (${r<10?r.toFixed(1):Math.round(r)} mm)`;
-    if(gmax>=55) txt += `, rafales ${Math.round(gmax/5)*5} km/h`;
-    return txt; });
-  // fusionne les périodes identiques consécutives
-  const summary = parts.join(". ") + ".";
-
-  // --- Ruban des 24 prochaines heures ---
-  const rib = []; for(let i=i0;i<Math.min(H.time.length,i0+24);i++) if(H.temperature_2m[i]!=null) rib.push(i);
-  const marks = rib.filter((i,k)=>k%3===0);
-  const ribbon = `<div class="ribbon">
-    <div class="labels">${marks.map((i,k)=>`<span>${k===0?"Maint.":hourOf(i)+"h"}</span>`).join("")}</div>
-    <div class="icons">${marks.map(i=>`<span>${skyIcon(st(i))}</span>`).join("")}</div>
-    <div class="band">${rib.map(i=>`<i style="background:${BAND[st(i)]};${H.is_day&&H.is_day[i]===0&&!st(i).startsWith("night")?"filter:brightness(.72)":""}"></i>`).join("")}
-      ${rib.map((i,k)=>{const r=H.precipitation[i]||0; return r>=0.2?`<span class="rain" style="left:${k/rib.length*100}%;width:${100/rib.length}%;opacity:${Math.min(1,.35+r/3)}"></span>`:""}).join("")}</div>
-    <div class="temps">${marks.map(i=>`<span>${r0(H.temperature_2m[i])}°</span>`).join("")}</div>
-  </div>`;
-
-  // --- Conseils pour la journée ---
-  const hNow = nowH.getHours();
-  const tgtDay = hNow<17 ? today : H.time.find(t=>t.slice(0,10)>today)?.slice(0,10);
-  const win = H.time.map((t,i)=>i).filter(i=>H.time[i].slice(0,10)===tgtDay && hourOf(i)>=Math.max(7, tgtDay===today?hNow:0) && hourOf(i)<=21 && H.temperature_2m[i]!=null);
-  const when = tgtDay===today ? "Aujourd'hui" : "Demain";
-  let tips = [];
-  if(win.length){
-    const rainTot = win.reduce((a,i)=>a+(H.precipitation[i]||0),0);
-    const agreeMax = Math.max(0,...win.map(i=>{const a=agree[H.time[i]];return a&&a.n?a.wet/a.n:0;}));
-    const tmin = Math.min(...win.map(i=>H.temperature_2m[i])), tmax = Math.max(...win.map(i=>H.temperature_2m[i]));
-    const gmax = Math.max(...win.map(i=>kmh(H.wind_gusts_10m[i])||0));
-    const sunny = win.filter(i=>["clear","partly"].includes(st(i))).length;
-    const ddom = H.wind_direction_10m[win.reduce((a,i)=>(H.wind_speed_10m[i]||0)>(H.wind_speed_10m[a]||0)?i:a,win[0])];
-    if(rainTot>=1 || agreeMax>=0.5) tips.push(["☂️","Parapluie"]);
-    else if(rainTot>=0.2 || agreeMax>=0.3) tips.push(["🌂","Parapluie au cas où"]);
-    else tips.push(["✅","Pas de pluie prévue","ok"]);
-    if(tmin<8) tips.push(["🧣","Bien couvert"]); else if(tmin<15 || gmax>=45) tips.push(["🧥","Une veste"]); else if(tmax>=26) tips.push(["🩳","Tenue légère"]);
+  // conseils pour un jour
+  function tipsFor(d){
+    const win = days[d].ks.map(k=>hrs[k]).filter(i=>hourOf(i)>=7&&hourOf(i)<=21&&(d!==today||H.time[i]>=nowStr));
+    if(!win.length) return [];
+    const tips=[]; const rainTot=win.reduce((a,i)=>a+(H.precipitation[i]||0),0);
+    const am=Math.max(0,...win.map(i=>{const a=agree[H.time[i]];return a&&a.n?a.wet/a.n:0;}));
+    const tmin=Math.min(...win.map(i=>H.temperature_2m[i])), tmax=Math.max(...win.map(i=>H.temperature_2m[i]));
+    const gmax=Math.max(...win.map(i=>kmh(H.wind_gusts_10m[i])||0));
+    const sunny=win.filter(i=>["clear","partly"].includes(st(i))).length;
+    const iw=win.reduce((a,i)=>(H.wind_speed_10m[i]||0)>(H.wind_speed_10m[a]||0)?i:a,win[0]);
+    if(rainTot>=1||am>=0.5) tips.push(["☂️","Parapluie"]); else if(rainTot>=0.2||am>=0.3) tips.push(["🌂","Parapluie au cas où"]); else tips.push(["✅","Pas de pluie"]);
+    if(tmin<8) tips.push(["🧣","Bien couvert"]); else if(tmin<15||gmax>=45) tips.push(["🧥","Une veste"]); else if(tmax>=26) tips.push(["🩳","Tenue légère"]);
     if(sunny>=4) tips.push(["😎","Lunettes de soleil"]);
-    if(gmax>=50){ const lw=localWind(ddom, gmax/1.852/1.4); tips.push(["💨",`${lw==="Mistral"?"Mistral, ":""}rafales ${Math.round(gmax/5)*5} km/h`]); }
-    if(rainTot<0.2 && agreeMax<0.3) tips.push(["👕", gmax>=55?"Linge dehors… bien accroché":"Linge dehors"]);
+    if(gmax>=50) tips.push(["💨",`${localWind(H.wind_direction_10m[iw],H.wind_speed_10m[iw])==="Mistral"?"Mistral, ":""}rafales ${Math.round(gmax/5)*5} km/h`]);
+    if(rainTot<0.2&&am<0.3) tips.push(["👕",gmax>=55?"Linge dehors… bien accroché":"Linge dehors"]);
+    return tips;
   }
 
-  // --- Les prochains jours ---
-  const days = {};
-  H.time.forEach((t,i)=>{ if(H.temperature_2m[i]==null || t.slice(0,10)<today) return; const d=t.slice(0,10), h=+t.slice(11,13);
-    const o = days[d] ||= {t:[],day:[],r:0,w:[],dir:[],agree:0};
-    o.t.push(H.temperature_2m[i]); o.r += H.precipitation[i]||0;
-    if(h>=8&&h<=20){ o.day.push(i); o.w.push(kmh(H.wind_speed_10m[i])||0); o.dir.push([H.wind_direction_10m[i],H.wind_speed_10m[i]]); const a=agree[t]; if(a&&a.n) o.agree=Math.max(o.agree,a.wet/a.n); } });
-  const dl = Object.entries(days).filter(([,o])=>o.day.length>=4).slice(0,10);
-  const gmin = Math.min(...dl.map(([,o])=>Math.min(...o.t))), gmax2 = Math.max(...dl.map(([,o])=>Math.max(...o.t)));
-  const week = dl.map(([d,o],k)=>{
-    const lo=Math.min(...o.t), hi=Math.max(...o.t), span=Math.max(1,gmax2-gmin);
-    const [c1]=wgColor("temp",lo), [c2]=wgColor("temp",hi);
-    let sx=0,sy=0; o.dir.forEach(([dd,s])=>{ if(dd==null)return; sx+=Math.sin(dd*Math.PI/180)*s; sy+=Math.cos(dd*Math.PI/180)*s; });
-    const dd=(Math.atan2(sx,sy)*180/Math.PI+360)%360, wmax=Math.max(...o.w); const [wb,wf]=wgColor("wind", wmax/1.852);
-    const name = k===0 && d===today ? "Auj." : fmtDay(d+"T12:00",{weekday:"short"}).replace(".","")+" "+(+d.slice(8,10));
-    const rTxt = o.r>=0.5 ? `${o.r<10?o.r.toFixed(1):Math.round(o.r)} mm<small>${o.agree>=0.5?"probable":"possible"}</small>` : "";
-    return `<div class="d"><span class="dn">${name}</span>${skyIcon(worst(o.day))}
-      <div class="trange"><span class="lo">${r0(lo)}°</span><div class="track"><i style="left:${(lo-gmin)/span*100}%;width:${Math.max(4,(hi-lo)/span*100)}%;background:linear-gradient(90deg,${c1},${c2})"></i></div><span class="hi">${r0(hi)}°</span></div>
-      <span class="rn">${rTxt}</span>
-      <span class="wd">${arrowSVG(dd,"var(--text-2)")}<span style="background:${wb};color:${wf}">${Math.round(wmax)}</span></span></div>`; }).join("");
+  // ---------- squelette ----------
+  const cols = hrs.map((i,k)=>{
+    const h=hourOf(i), r=H.precipitation[i]||0, w=kmh(H.wind_speed_10m[i]);
+    const [wb,wf]=wgColor("wind",H.wind_speed_10m[i]);
+    const dl = h===0||k===0 ? fmtDay(dayOf(i)+"T12:00",{weekday:"short",day:"numeric"}).replace(".","") : "";
+    return `<div class="hc${h===0?" midnight":""}" data-k="${k}">
+      <div class="hdl">${dl}</div>
+      <div class="hh">${String(h).padStart(2,"0")}h</div>
+      ${skyIcon(st(i))}
+      <div class="ht">${r0(H.temperature_2m[i])}°</div>
+      <div class="hb" style="background:${BAND[st(i)]};${!isDay(i)&&!st(i).startsWith("night")?"filter:brightness(.72)":""}"></div>
+      <div class="hr">${r>=0.1?fmtMm(r):""}</div>
+      <div class="hw">${arrowSVG(H.wind_direction_10m[i],"var(--text-2)")}<span style="background:${wb};color:${wf}">${Math.round(w)}</span></div>
+    </div>`; }).join("");
+  const chips = dayList.map(d=>{ const o=days[d];
+    const name = d===today ? "Auj." : fmtDay(d+"T12:00",{weekday:"short"}).replace(".","");
+    return `<button class="dchip" data-day="${d}"><span class="dn">${name}</span><span class="dd">${+d.slice(8,10)}</span>${skyIcon(o.icon)}<span class="dt"><b>${r0(o.hi)}°</b> ${r0(o.lo)}°</span><span class="dr">${o.rain>=0.5?`💧${fmtMm(o.rain)}`:"&nbsp;"}</span></button>`; }).join("");
 
   $("#simple").innerHTML = `
-    <div class="card">
-      <div class="hero">${skyIcon(k0).replace("<svg","<svg class=\"ico\"")}
-        <div><div class="temp">${r0(H.temperature_2m[i0])}°</div>
-          <div class="what">${SKY_TXT[k0]}</div>
-          <div class="wind">${arrowSVG(d0,"var(--text-2)")} ${windWords(w0)} ${dirLong(d0)}${lw0==="Mistral"?" (Mistral)":""} · ${Math.round(w0)} km/h, rafales ${Math.round(g0)}</div></div>
-      </div>
-      <div class="summary">${summary}</div>
+    <div class="card scard">
+      <div id="sHead"></div>
+      <div class="scrub"><div class="scroller" id="scroller"><div class="pad"></div>${cols}<div class="pad"></div></div><div class="marker"></div></div>
+      <div class="legendline"><span>💧 pluie en mm</span><span>vent en km/h</span></div>
+      <div class="dchips" id="dchips">${chips}</div>
     </div>
-    <div class="card"><h2>Les prochaines 24 h</h2>${ribbon}</div>
-    ${tips.length?`<div class="card"><h2>${when}, on prévoit…</h2><div class="tips">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div></div>`:""}
-    <div class="card week"><h2>Les jours suivants <small>vent max de journée en km/h</small></h2>${week}</div>`;
+    <div class="card" id="sDay"></div>`;
+
+  const sc = $("#scroller"); const hc = [...sc.querySelectorAll(".hc")]; const dc=[...document.querySelectorAll(".dchip")];
+  const colW = () => hc[0].getBoundingClientRect().width;
+  sc.querySelectorAll(".pad").forEach(p=>p.style.width = `${Math.max(0, sc.clientWidth/2 - colW()/2)}px`);
+  let cur=-1, curDay=null;
+  function select(k){
+    if(k===cur) return; if(cur>=0) hc[cur].classList.remove("sel"); cur=k; hc[k].classList.add("sel");
+    const i=hrs[k], d=dayOf(i), o=days[d], ks=st(i), w=kmh(H.wind_speed_10m[i]), g=kmh(H.wind_gusts_10m[i]), dir=H.wind_direction_10m[i];
+    const r=H.precipitation[i]||0, a=agree[H.time[i]];
+    const when = k===kNow ? "Maintenant" : `${fmtDay(d+"T12:00",{weekday:"long",day:"numeric",month:"long"})} · ${hourOf(i)}h`;
+    const lw = localWind(dir, H.wind_speed_10m[i]);
+    const rainTxt = r>=0.1 ? `💧 ${fmtMm(r)} mm` : (a&&a.wet ? `💧 pluie possible (${a.wet}/${a.n} modèles)` : `sec`);
+    $("#sHead").innerHTML = `<div class="sw">${when}</div>
+      <div class="sbig">${skyIcon(ks).replace("<svg","<svg class=\"ico\"")}<span class="stemp">${r0(H.temperature_2m[i])}°</span>
+        <div class="sright"><div class="sdesc">${SKY_TXT[ks]}</div><div class="sminmax">${r0(o.hi)}° / ${r0(o.lo)}°</div></div></div>
+      <div class="sline">${arrowSVG(dir,"var(--text-2)")} ${windWords(w)} ${dirLong(dir)}${lw==="Mistral"?" (Mistral)":""} · ${Math.round(w)} km/h, rafales ${Math.round(g)} · ${rainTxt}</div>`;
+    if(d!==curDay){ curDay=d; dc.forEach(c=>c.classList.toggle("on", c.dataset.day===d));
+      const chip=dc.find(c=>c.dataset.day===d); if(chip){ const box=$("#dchips"); const l=chip.offsetLeft-box.clientWidth/2+chip.offsetWidth/2; box.scrollTo({left:l,behavior:"smooth"}); }
+      const tips=tipsFor(d), lab = d===today?"Aujourd'hui":fmtDay(d+"T12:00",{weekday:"long",day:"numeric"});
+      $("#sDay").innerHTML = `<h2 style="text-transform:none">${lab.charAt(0).toUpperCase()+lab.slice(1)}</h2><div class="summary">${daySummary(d)||""}</div>${tips.length?`<div class="tips" style="margin-top:8px">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div>`:""}`; }
+    state.simpleSel = H.time[i];
+  }
+  const kFromScroll = () => Math.max(0, Math.min(hc.length-1, Math.round(sc.scrollLeft / colW())));
+  let raf=0; sc.addEventListener("scroll", ()=>{ if(raf) return; raf=requestAnimationFrame(()=>{ raf=0; select(kFromScroll()); }); }, {passive:true});
+  const goTo = (k,smooth) => sc.scrollTo({left:k*colW(), behavior:smooth?"smooth":"auto"});
+  hc.forEach((el,k)=>el.addEventListener("click",()=>goTo(k,true)));
+  dc.forEach(c=>c.addEventListener("click",()=>{ const d=c.dataset.day; const ks=days[d].ks; const k = d===today ? kNow : (ks.find(k=>hourOf(hrs[k])===8) ?? ks[0]); goTo(k,true); }));
+  let k0 = kNow; if(state.simpleSel){ const j=hrs.findIndex(i=>H.time[i]===state.simpleSel); if(j>=0) k0=j; }
+  goTo(k0,false); select(k0);
 }
 
 function render(){
