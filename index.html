@@ -194,6 +194,7 @@ body.simple .tcard, body.simple #content{display:none}
 .hc .hw .arrow{width:12px;height:12px}
 .hc .hw span{padding:0 4px;border-radius:5px;font-weight:600;font-variant-numeric:tabular-nums}
 .scrub .marker{position:absolute;left:50%;top:0;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-top-color:var(--text);opacity:.5;pointer-events:none}
+.hc .hdl .sun.night{color:#5b6fb5}
 .hc .hdl .sun{color:#d98a00;font-weight:600;font-size:9.5px}
 .sunline{font-size:12.5px;color:var(--text-2);margin:-2px 0 6px}
 .legendline{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px}
@@ -236,7 +237,7 @@ body.simple .tcard, body.simple #content{display:none}
   </section>
   <div id="content"></div>
 </main>
-<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine · version du 15/11 23h10</footer>
+<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine · version du 15/11 23h15</footer>
 
 <script>
 const DEFAULT_SPOTS = [
@@ -412,7 +413,7 @@ function mergedSeries(){
 
 
 // Lever/coucher du soleil (algorithme NOAA simplifié, précision ~1 min)
-function sunTimes(dateStr, lat, lng){
+function sunTimes(dateStr, lat, lng, h0=-0.833){
   const rad=Math.PI/180, dayMs=864e5, J1970=2440588, J2000=2451545, e=rad*23.4397, J0=0.0009;
   const toDays = d => d/dayMs - 0.5 + J1970 - J2000;
   const fromJ = j => new Date((j + 0.5 - J1970)*dayMs);
@@ -425,7 +426,7 @@ function sunTimes(dateStr, lat, lng){
   const L = M + C + rad*102.9372 + Math.PI;
   const dec = Math.asin(Math.sin(e)*Math.sin(L));
   const Jnoon = J2000 + ds + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
-  const w = Math.acos((Math.sin(-0.833*rad) - Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec)));
+  const w = Math.acos((Math.sin(h0*rad) - Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec)));
   const Jset = J2000 + (J0 + (w + lw)/(2*Math.PI) + n) + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);
   const Jrise = Jnoon - (Jset - Jnoon);
   if(isNaN(w)) return null;
@@ -433,7 +434,8 @@ function sunTimes(dateStr, lat, lng){
 }
 const hmSun = d => d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"}).replace(":","h");
 function sunFor(d){ const sp=state.spots[state.spotIdx]; const t=sp?sunTimes(d,sp.lat,sp.lon):null; if(!t) return null;
-  const len=(t.set-t.rise)/60000; return {rise:t.rise, set:t.set, riseTxt:hmSun(t.rise), setTxt:hmSun(t.set), lenTxt:`${Math.floor(len/60)}h${String(Math.round(len%60)).padStart(2,"0")}`,
+  const len=(t.set-t.rise)/60000; const nt=sunTimes(d,sp.lat,sp.lon,-18); // nuit complète = soleil 18° sous l'horizon
+  return {rise:t.rise, set:t.set, riseTxt:hmSun(t.rise), setTxt:hmSun(t.set), nightTxt: nt?hmSun(nt.set):null, nightH: nt?+hmSun(nt.set).slice(0,2):null, lenTxt:`${Math.floor(len/60)}h${String(Math.round(len%60)).padStart(2,"0")}`,
     riseH:+hmSun(t.rise).slice(0,2), setH:+hmSun(t.set).slice(0,2)}; }
 
 // ================== VUE SIMPLE ==================
@@ -538,7 +540,7 @@ function renderSimple(H){
     const [wb,wf]=wgColor("wind",H.wind_speed_10m[i]);
     const sn = sunFor(dayOf(i));
     const dl = h===0||k===0 ? fmtDay(dayOf(i)+"T12:00",{weekday:"short",day:"numeric"}).replace(".","")
-      : sn && h===sn.riseH ? `<span class="sun">↑ ${sn.riseTxt}</span>` : sn && h===sn.setH ? `<span class="sun">↓ ${sn.setTxt}</span>` : "";
+      : sn && h===sn.riseH ? `<span class="sun">↑ ${sn.riseTxt}</span>` : sn && h===sn.setH ? `<span class="sun">↓ ${sn.setTxt}</span>` : sn && sn.nightTxt && h===sn.nightH ? `<span class="sun night">🌙 ${sn.nightTxt}</span>` : "";
     return `<div class="hc${h===0?" midnight":""}" data-k="${k}">
       <div class="hdl">${dl}</div>
       <div class="hh">${String(h).padStart(2,"0")}h</div>
@@ -579,7 +581,7 @@ function renderSimple(H){
     if(d!==curDay){ curDay=d; dc.forEach(c=>c.classList.toggle("on", c.dataset.day===d));
       const chip=dc.find(c=>c.dataset.day===d); if(chip){ const box=$("#dchips"); const l=chip.offsetLeft-box.clientWidth/2+chip.offsetWidth/2; box.scrollTo({left:l,behavior:"smooth"}); }
       const tips=tipsFor(d), lab = d===today?"Aujourd'hui":fmtDay(d+"T12:00",{weekday:"long",day:"numeric"});
-      $("#sDay").innerHTML = `<h2 style="text-transform:none">${lab.charAt(0).toUpperCase()+lab.slice(1)}</h2>${(()=>{const sn=sunFor(d);return sn?`<div class="sunline">🌅 Lever ${sn.riseTxt} · 🌇 Coucher ${sn.setTxt} · ${sn.lenTxt} de jour</div>`:""})()}<div class="summary">${daySummary(d)||""}</div>${tips.length?`<div class="tips" style="margin-top:8px">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div>`:""}`; }
+      $("#sDay").innerHTML = `<h2 style="text-transform:none">${lab.charAt(0).toUpperCase()+lab.slice(1)}</h2>${(()=>{const sn=sunFor(d);return sn?`<div class="sunline">🌅 Lever ${sn.riseTxt} · 🌇 Coucher ${sn.setTxt}${sn.nightTxt?` · 🌙 Nuit complète ${sn.nightTxt}`:""} · ${sn.lenTxt} de jour</div>`:""})()}<div class="summary">${daySummary(d)||""}</div>${tips.length?`<div class="tips" style="margin-top:8px">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div>`:""}`; }
     state.simpleSel = H.time[i];
   }
   const kFromScroll = () => Math.max(0, Math.min(hc.length-1, Math.round(sc.scrollLeft / colW())));
@@ -634,7 +636,7 @@ function render(){
       <div class="big">${r0(cv(mx))}<small> ${unit} max</small></div>
       <div class="meta">
         <span>${arrowSVG(dd,"var(--text-2)")} ${dirName(dd)} · moy. ${r0(cv(avg))} · raf. ${r0(cv(gx))}</span>
-        ${(()=>{const sn=sunFor(d);return sn?`<span>🌅 ${sn.riseTxt} · 🌇 ${sn.setTxt}</span>`:""})()}
+        ${(()=>{const sn=sunFor(d);return sn?`<span>🌅 ${sn.riseTxt} · 🌇 ${sn.setTxt}${sn.nightTxt?` · 🌙 ${sn.nightTxt}`:""}</span>`:""})()}
         <span>${r0(Math.min(...o.t))}° / ${r0(Math.max(...o.t))}°${o.p>=0.2?` · <span class="rain">${o.p.toFixed(1)} mm</span>`:" · sec"}${wv!=null?` · houle ${wv.toFixed(1)} m`:""}</span>
       </div>
       <div class="bar" style="background:${bg}"></div>
