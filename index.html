@@ -28,54 +28,60 @@
   }
 }
 *{box-sizing:border-box}
-body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
-header{padding:16px 20px 8px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-h1{font-size:20px;margin:0;font-weight:650;letter-spacing:-.01em}
-.sub{color:var(--text-2);font-size:13px}
-main{padding:0 20px 40px;max-width:1500px;margin:0 auto}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:14px}
+body{margin:0;font:13px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%}
+header{padding:10px 12px 0;max-width:1500px;margin:0 auto}
+.titlebar{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:11.5px}
+.spotsbar{display:flex;gap:6px;align-items:center;margin-top:8px}
+main{padding:0 12px 30px;max-width:1500px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit}
+.chips{display:flex;gap:5px;overflow-x:auto;flex:1;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:4px 10px;cursor:pointer;font:inherit;font-size:12.5px;white-space:nowrap}
 .chip:hover{border-color:var(--text-2)}
 .chip.on{background:var(--text);color:var(--surface);border-color:var(--text)}
-.chip .x{opacity:.55;font-size:12px;padding-left:2px}
+.chip .x{opacity:.55;font-size:11px;padding-left:2px}
 .chip .x:hover{opacity:1}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.seg button{border:0;background:var(--surface);color:var(--text-2);padding:6px 11px;font:inherit;cursor:pointer;border-right:1px solid var(--border)}
+.controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.controls .nav{margin-left:auto}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--text-2);padding:4px 8px;font:inherit;font-size:12px;cursor:pointer;border-right:1px solid var(--border)}
 .seg button:last-child{border-right:0}
 .seg button.on{background:var(--surface-2);color:var(--text);font-weight:600}
-.ctl-label{color:var(--muted);font-size:12px;margin-right:2px}
-.search{position:relative}
-.search input{font:inherit;padding:7px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);width:230px}
-.results{position:absolute;top:110%;left:0;z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:300px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
+.search{position:relative;flex:none}
+.search input{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);width:90px;transition:width .2s}
+.search input:focus{width:200px;outline:none;border-color:var(--text-2)}
+.results{position:absolute;top:110%;right:0;z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
 .results div{padding:8px 12px;cursor:pointer}
 .results div:hover{background:var(--surface-2)}
 .results small{color:var(--muted)}
-.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.day{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}
+.day{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer}
 .day:hover{border-color:var(--text-2)}
 .day .d{font-weight:600;text-transform:capitalize}
-.day .big{font-size:26px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.day .big{font-size:22px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .day .big small{font-size:13px;font-weight:500;color:var(--text-2)}
-.day .meta{color:var(--text-2);font-size:12.5px;margin-top:4px;display:flex;flex-direction:column;gap:2px}
+.day .meta{color:var(--text-2);font-size:11.5px;margin-top:4px;display:flex;flex-direction:column;gap:2px}
 .bar{height:6px;border-radius:3px;margin-top:8px;box-shadow:inset 0 0 0 1px var(--border)}
 .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--text-2);margin-top:6px}
-.tablewrap{overflow-x:auto;border-radius:8px}
-table.fc{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:13px}
-table.fc th,table.fc td{padding:0;text-align:center;min-width:38px;height:30px}
-table.fc th.lab{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;padding:0 12px 0 0;color:var(--text-2);font-weight:500;min-width:110px;white-space:nowrap}
-table.fc th.lab small{color:var(--muted)}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.fc{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:12px}
+table.fc th,table.fc td{padding:0;text-align:center;min-width:27px;height:23px}
+table.fc th.lab{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;padding:0 4px 0 0;color:var(--text-2);font-weight:500;min-width:38px;font-size:11px;line-height:1.05;white-space:nowrap}
+table.fc th.lab small{display:block;color:var(--muted);font-size:9.5px;font-weight:400}
 table.fc td.dsep, table.fc th.dsep{border-left:2px solid var(--border)}
-table.fc tr.dayrow th{font-weight:600;text-align:left;padding-left:6px;text-transform:capitalize;height:26px;color:var(--text)}
-table.fc tr.hr td{color:var(--muted);font-size:12px}
-table.fc td.w{font-weight:600;border-radius:4px;border:1px solid var(--surface)}
+table.fc tr.dayrow th{font-weight:600;text-align:left;padding-left:4px;text-transform:capitalize;height:20px;color:var(--text);font-size:11.5px;white-space:nowrap;overflow:hidden;max-width:0}
+table.fc tr.hr td{color:var(--muted);font-size:10.5px;height:17px}
+table.fc td.w{font-weight:600;border-radius:3px;border:1px solid var(--surface)}
 table.fc td.night{opacity:.78}
-.arrow{display:inline-block;width:18px;height:18px;vertical-align:middle}
-.dirtxt{display:block;font-size:10.5px;color:var(--muted);line-height:1}
+.arrow{display:inline-block;width:15px;height:15px;vertical-align:middle}
+.dirtxt{display:block;font-size:8.5px;color:var(--muted);line-height:1}
+.relay{color:var(--muted);font-size:11px;margin-top:6px}
 .rain{color:var(--accent);font-weight:600}
-.legend-scale{display:flex;gap:2px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--text-2)}
-.legend-scale span.sw{display:inline-block;width:30px;height:16px;border-radius:3px;text-align:center;line-height:16px;font-size:10.5px}
+.legend-scale{display:flex;gap:2px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:10.5px;color:var(--text-2)}
+.legend-scale span.sw{display:inline-block;width:24px;height:14px;border-radius:3px;text-align:center;line-height:13px;font-size:9.5px}
 .chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-2);margin-bottom:6px}
 .chart-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
 .chart-legend label{cursor:pointer;display:inline-flex;align-items:center;gap:4px}
@@ -84,43 +90,52 @@ table.fc td.night{opacity:.78}
 #tip .t{font-weight:600;margin-bottom:4px;text-transform:capitalize}
 #tip .r{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
 #tip i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
-h2{font-size:15px;margin:0 0 10px;font-weight:620}
-h2 small{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:6px}
+h2{font-size:14px;margin:0 0 8px;font-weight:620}
+h2 small{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
 .status{color:var(--text-2);padding:24px 0;text-align:center}
 .err{color:#d03b3b}
-footer{color:var(--muted);font-size:12px;text-align:center;padding:10px}
+footer{color:var(--muted);font-size:11px;text-align:center;padding:10px}
 footer a{color:inherit}
+@media (max-width:600px){
+  header{padding:8px 8px 0} main{padding:0 6px 24px}
+  .card{padding:8px 6px;border-radius:8px;margin-top:8px}
+  .tcard{padding:6px 4px}
+  .controls{gap:4px;margin-bottom:6px}
+  .seg button{padding:4px 6px;font-size:11.5px}
+  table.fc{font-size:11px}
+  table.fc th,table.fc td{min-width:23px;height:21px}
+  table.fc th.lab{min-width:33px;font-size:10px}
+  table.fc th.lab small{font-size:8.5px}
+  table.fc tr.hr td{font-size:9.5px;height:15px}
+  .arrow{width:13px;height:13px}
+  .days{grid-template-columns:repeat(2,1fr);gap:6px}
+  .day .big{font-size:20px}
+}
 </style>
 </head>
 <body>
 <header>
-  <div>
-    <h1 id="title">Vent & météo</h1>
-    <div class="sub" id="subtitle">Prévisions multi-modèles</div>
-  </div>
-  <div class="row">
-    <span class="ctl-label">Modèle</span>
-    <div class="seg" id="modelSeg"></div>
-    <span class="ctl-label" style="margin-left:8px">Unité</span>
-    <div class="seg" id="unitSeg"></div>
-    <span class="ctl-label" style="margin-left:8px">Pas</span>
-    <div class="seg" id="stepSeg"></div>
-    <span class="ctl-label" style="margin-left:8px">Jours</span>
-    <div class="seg" id="daysSeg"></div>
+  <div class="titlebar"><h1 id="title">Vent & météo</h1><span class="sub" id="subtitle"></span></div>
+  <div class="spotsbar">
+    <div class="chips" id="spots"></div>
+    <div class="search">
+      <input id="q" placeholder="+ Spot" autocomplete="off">
+      <div class="results" id="results" hidden></div>
+    </div>
   </div>
 </header>
 <main>
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <div class="chips" id="spots"></div>
-      <div class="search">
-        <input id="q" placeholder="Ajouter un spot (ville, plage…)" autocomplete="off">
-        <div class="results" id="results" hidden></div>
-      </div>
+  <section class="card tcard">
+    <div class="controls">
+      <div class="seg" id="modelSeg"></div>
+      <div class="seg" id="unitSeg"></div>
+      <div class="seg" id="stepSeg" title="Pas horaire"></div>
+      <div class="seg" id="daysSeg" title="Nombre de jours"></div>
+      <div class="seg nav"><button id="scrL" title="Jour précédent">◀</button><button id="scrR" title="Jour suivant">▶</button></div>
     </div>
-  </div>
-
-  <div id="content"><div class="status">Chargement…</div></div>
+    <div id="tableArea"><div class="status">Chargement…</div></div>
+  </section>
+  <div id="content"></div>
 </main>
 <footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine</footer>
 
@@ -207,8 +222,8 @@ function arrowSVG(dir, color){
 function renderControls(){
   $("#modelSeg").innerHTML = MODELS.map(m=>`<button data-m="${m.id}" class="${m.id===state.model?"on":""}" title="${m.label}">${m.short}</button>`).join("");
   $("#unitSeg").innerHTML = Object.entries(UNITS).map(([k,u])=>`<button data-u="${k}" class="${k===state.unit?"on":""}">${u.short}</button>`).join("");
-  $("#stepSeg").innerHTML = [1,2,3,6].map(s=>`<button data-s="${s}" class="${s===state.step?"on":""}">${s} h</button>`).join("");
-  $("#daysSeg").innerHTML = [3,5,7,10,14].map(d=>`<button data-days="${d}" class="${d===state.days?"on":""}">${d}</button>`).join("");
+  $("#stepSeg").innerHTML = [1,2,3,6].map(s=>`<button data-s="${s}" class="${s===state.step?"on":""}">${s}h</button>`).join("");
+  $("#daysSeg").innerHTML = [3,5,7,10,14].map(d=>`<button data-days="${d}" class="${d===state.days?"on":""}">${d}j</button>`).join("");
   $("#spots").innerHTML = state.spots.map((s,i)=>`<button class="chip ${i===state.spotIdx?"on":""}" data-i="${i}">${s.name}${state.spots.length>1?`<span class="x" data-del="${i}" title="Retirer">✕</span>`:""}</button>`).join("");
 }
 document.addEventListener("click", e=>{
@@ -219,7 +234,7 @@ document.addEventListener("click", e=>{
   if(t.dataset.u){ state.unit=t.dataset.u; store.set("unit",state.unit); renderControls(); render(); return; }
   if(t.dataset.days){ state.days=+t.dataset.days; store.set("days",state.days); renderControls(); load(); return; }
   if(t.dataset.s){ state.step=+t.dataset.s; store.set("step",state.step); renderControls(); render(); return; }
-  const day = t.closest(".day[data-day]"); if(day){ const th=document.querySelector(`th[data-dayanchor="${day.dataset.day}"]`); if(th) th.scrollIntoView({behavior:"smooth",inline:"start",block:"nearest"}); return; }
+  const day = t.closest(".day[data-day]"); if(day){ const th=document.querySelector(`th[data-dayanchor="${day.dataset.day}"]`); const tw=document.querySelector(".tablewrap"); if(th&&tw){ tw.scrollTo({left:th.offsetLeft-tw.querySelector("th.lab").offsetWidth,behavior:"smooth"}); document.querySelector(".tcard").scrollIntoView({behavior:"smooth",block:"start"}); } return; }
   if(!t.closest(".search")) $("#results").hidden = true;
 });
 
@@ -250,8 +265,8 @@ $("#q").addEventListener("input", e=>{
 async function load(){
   const spot = state.spots[state.spotIdx]; if(!spot) return;
   $("#title").textContent = spot.name;
-  $("#subtitle").textContent = `${spot.lat.toFixed(3)}°, ${spot.lon.toFixed(3)}° · prévisions sur ${state.days} jours`;
-  $("#content").innerHTML = `<div class="status">Chargement des modèles…</div>`;
+  $("#subtitle").textContent = `${spot.lat.toFixed(2)}°, ${spot.lon.toFixed(2)}°`;
+  $("#tableArea").innerHTML = `<div class="status">Chargement des modèles…</div>`; $("#content").innerHTML = "";
   const base = `latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&wind_speed_unit=kn`;
   const reqs = MODELS.map(m=>fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&models=${m.id}`).then(r=>r.ok?r.json():null).catch(()=>null));
   const marineReq = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&hourly=wave_height,wave_period,wave_direction`).then(r=>r.ok?r.json():null).catch(()=>null);
@@ -259,7 +274,7 @@ async function load(){
   if(spot !== state.spots[state.spotIdx]) return; // spot changé entre-temps
   state.data = {}; MODELS.forEach((m,i)=>{ if(res[i]&&res[i].hourly) state.data[m.id]=res[i].hourly; });
   state.marine = marine&&marine.hourly ? marine.hourly : null;
-  if(!Object.keys(state.data).length){ $("#content").innerHTML = `<div class="status err">Impossible de récupérer les prévisions.</div><div class="status">Si tu regardes cette page dans l'aperçu de Claude, c'est normal : l'aperçu bloque l'accès à Internet.<br>Télécharge le fichier et ouvre-le dans Safari, Chrome ou Firefox.</div>`; return; }
+  if(!Object.keys(state.data).length){ $("#tableArea").innerHTML = `<div class="status err">Impossible de récupérer les prévisions.</div><div class="status">Si tu regardes cette page dans l'aperçu de Claude, c'est normal : l'aperçu bloque l'accès à Internet.<br>Télécharge le fichier et ouvre-le dans Safari, Chrome ou Firefox.</div>`; return; }
   render();
 }
 
@@ -335,38 +350,40 @@ function render(){
   });
   // ligne des jours (colspan)
   const groups=[]; cols.forEach(c=>{ if(c.sep) groups.push({d:c.d,n:0}); groups[groups.length-1].n++; });
-  const rowDays = `<tr class="dayrow"><th class="lab"></th>${groups.map(g=>`<th colspan="${g.n}" class="dsep" data-dayanchor="${g.d}">${g.n>=2?fmtDay(g.d+"T12:00",{weekday:g.n>=4?"long":"short",day:"numeric"}):""}</th>`).join("")}</tr>`;
+  const rowDays = `<tr class="dayrow"><th class="lab"></th>${groups.map(g=>`<th colspan="${g.n}" class="dsep" data-dayanchor="${g.d}">${g.n>=2?fmtDay(g.d+"T12:00",{weekday:g.n>=7?"long":"short",day:"numeric"}):""}</th>`).join("")}</tr>`;
   const cell = (c,inner,cls="",style="") => `<td class="${c.sep?"dsep ":""}${H.is_day&&H.is_day[c.i]===0?"night ":""}${cls}" style="${style}">${inner}</td>`;
-  const rowH = `<tr class="hr"><th class="lab">Heure</th>${cols.map(c=>cell(c,c.t.slice(11,13)+"h")).join("")}</tr>`;
+  const rowH = `<tr class="hr"><th class="lab">h</th>${cols.map(c=>cell(c,c.t.slice(11,13))).join("")}</tr>`;
   let prevSrc=null;
-  const rowS = `<tr class="hr"><th class="lab">Modèle</th>${cols.map(c=>{const sc=H.src[c.i];const show=sc!==prevSrc;prevSrc=sc;return cell(c,show?`<span style="font-size:10.5px;white-space:nowrap">${MODELS.find(m=>m.id===sc)?.short||""}</span>`:"")}).join("")}</tr>`;
-  const rowW = `<tr><th class="lab">Vent <small>${unit}</small></th>${cols.map(c=>{const v=H.wind_speed_10m[c.i];const [bg,fg]=windColor(v);return cell(c,r0(cv(v)),"w",`background:${bg};color:${fg}`)}).join("")}</tr>`;
-  const rowG = `<tr><th class="lab">Rafales <small>${unit}</small></th>${cols.map(c=>{const v=H.wind_gusts_10m[c.i];const [bg,fg]=windColor(v);return cell(c,r0(cv(v)),"w",`background:${bg};color:${fg}`)}).join("")}</tr>`;
-  const rowD = `<tr><th class="lab">Direction</th>${cols.map(c=>{const d=H.wind_direction_10m[c.i];return cell(c,`${arrowSVG(d,"var(--text)")}<span class="dirtxt">${dirName(d)}</span>`,"","height:40px")}).join("")}</tr>`;
+  const rowS = `<tr class="hr"><th class="lab" title="Modèle utilisé">Mod.</th>${cols.map(c=>{const sc=H.src[c.i];const show=sc!==prevSrc;prevSrc=sc;return cell(c,show?`<span style="font-size:8.5px;white-space:nowrap">${MODELS.find(m=>m.id===sc)?.short||""}</span>`:"")}).join("")}</tr>`;
+  const rowW = `<tr><th class="lab" title="Vent moyen">Vent<small>${unit}</small></th>${cols.map(c=>{const v=H.wind_speed_10m[c.i];const [bg,fg]=windColor(v);return cell(c,r0(cv(v)),"w",`background:${bg};color:${fg}`)}).join("")}</tr>`;
+  const rowG = `<tr><th class="lab" title="Rafales">Raf.<small>${unit}</small></th>${cols.map(c=>{const v=H.wind_gusts_10m[c.i];const [bg,fg]=windColor(v);return cell(c,r0(cv(v)),"w",`background:${bg};color:${fg}`)}).join("")}</tr>`;
+  const rowD = `<tr><th class="lab" title="Direction du vent">Dir.</th>${cols.map(c=>{const d=H.wind_direction_10m[c.i];return cell(c,`${arrowSVG(d,"var(--text)")}<span class="dirtxt">${dirName(d)}</span>`,"","height:30px")}).join("")}</tr>`;
   const colored = (c,scale,v,txt) => { const [bg,fg]=wgColor(scale,v); return cell(c,txt,"w",`background:${bg};color:${fg};font-weight:500`); };
-  const rowT = `<tr><th class="lab">Température <small>°C</small></th>${cols.map(c=>{const v=H.temperature_2m[c.i];return colored(c,"temp",v,r0(v))}).join("")}</tr>`;
-  const rowC = `<tr><th class="lab">Nuages <small>%</small></th>${cols.map(c=>{const v=H.cloud_cover[c.i];return colored(c,"cloud",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
-  const rowP = `<tr><th class="lab">Pluie <small>mm/${state.step}h</small></th>${cols.map(c=>{let s=0;for(let k=0;k<state.step;k++){s+=H.precipitation[c.i+k]||0}return s>=0.1?colored(c,"rain",s/state.step,s<1?s.toFixed(1):Math.round(s)):cell(c,"")}).join("")}</tr>`;
+  const rowT = `<tr><th class="lab" title="Température">T°<small>°C</small></th>${cols.map(c=>{const v=H.temperature_2m[c.i];return colored(c,"temp",v,r0(v))}).join("")}</tr>`;
+  const rowC = `<tr><th class="lab" title="Couverture nuageuse">Nuag.<small>%</small></th>${cols.map(c=>{const v=H.cloud_cover[c.i];return colored(c,"cloud",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
+  const rowP = `<tr><th class="lab" title="Pluie">Pluie<small>mm/${state.step}h</small></th>${cols.map(c=>{let s=0;for(let k=0;k<state.step;k++){s+=H.precipitation[c.i+k]||0}return s>=0.1?colored(c,"rain",s/state.step,s<1?s.toFixed(1):Math.round(s)):cell(c,"")}).join("")}</tr>`;
   let rowsMarine="";
   if(M && M.wave_height.some(v=>v!=null)){
-    rowsMarine += `<tr><th class="lab">Houle <small>m</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_height[k]:null;return colored(c,"waves",v,v==null?"–":v.toFixed(1))}).join("")}</tr>`;
-    rowsMarine += `<tr><th class="lab">Période <small>s</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_period[k]:null;return colored(c,"period",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
-    rowsMarine += `<tr><th class="lab">Dir. houle</th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_direction[k]:null;return cell(c,arrowSVG(v,"var(--text-2)"))}).join("")}</tr>`;
+    rowsMarine += `<tr><th class="lab" title="Hauteur des vagues">Houle<small>m</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_height[k]:null;return colored(c,"waves",v,v==null?"–":v.toFixed(1))}).join("")}</tr>`;
+    rowsMarine += `<tr><th class="lab" title="Période des vagues">Pér.<small>s</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_period[k]:null;return colored(c,"period",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
+    rowsMarine += `<tr><th class="lab" title="Direction de la houle">D.h.</th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_direction[k]:null;return cell(c,arrowSVG(v,"var(--text-2)"))}).join("")}</tr>`;
   }
   const scale = [3,6,9,12,15,18,21,24,27,30,35,40,50,60].map(kn=>{const [bg,fg]=windColor(kn);return `<span class="sw" style="background:${bg};color:${fg};border:1px solid var(--border)">${Math.round(kn*UNITS[state.unit].f)}</span>`}).join("");
 
+  const tw0 = document.querySelector(".tablewrap"); const keepScroll = tw0 && tw0.dataset.spot===String(state.spotIdx) ? tw0.scrollLeft : 0;
+  $("#tableArea").innerHTML = `
+      <div class="tablewrap" data-spot="${state.spotIdx}"><table class="fc">${rowDays}${rowH}${rowS}${rowW}${rowG}${rowD}${rowT}${rowC}${rowP}${rowsMarine}</table></div>
+      <div class="relay">${mInfo.label}${relay}</div>
+      <div class="legend-scale"><span style="margin-right:4px">${unit} :</span>${scale}<span style="margin-left:4px">+</span></div>`;
   $("#content").innerHTML = `
-    <div class="card"><h2>Les ${Object.keys(byDay).length} prochains jours <small>${mInfo.label} · vent de journée 8h–19h · clic = aller au détail</small></h2><div class="days">${dayCards}</div></div>
-    <div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">Détail heure par heure <small>${mInfo.label}${relay}</small></h2><div class="seg"><button id="scrL" title="Jour précédent">◀</button><button id="scrR" title="Jour suivant">▶</button></div></div>
-      <div class="tablewrap"><table class="fc">${rowDays}${rowH}${rowS}${rowW}${rowG}${rowD}${rowT}${rowC}${rowP}${rowsMarine}</table></div>
-      <div class="legend-scale"><span style="margin-right:6px">Échelle (${unit}) :</span>${scale}<span style="margin-left:6px">+</span></div>
-    </div>
+    <div class="card"><h2>Les ${Object.keys(byDay).length} prochains jours <small>vent de journée 8h–19h · touche un jour pour le voir dans le tableau</small></h2><div class="days">${dayCards}</div></div>
     <div class="card"><h2>Comparaison des modèles <small>vent moyen à 10 m, ${unit}</small></h2>
       <div class="chart-legend" id="clegend"></div>
-      <div id="chartbox"><svg id="chart" width="100%" height="300"></svg><div id="tip"></div></div>
+      <div id="chartbox"><svg id="chart" width="100%" height="${innerWidth<600?220:300}"></svg><div id="tip"></div></div>
     </div>`;
-  const tw = document.querySelector(".tablewrap");
-  const jump = dir => { const ths=[...document.querySelectorAll("th[data-dayanchor]")]; const x0=tw.getBoundingClientRect().left+110; const pos=ths.map(th=>th.getBoundingClientRect().left-x0); let target = dir>0 ? pos.find(p=>p>5) : [...pos].reverse().find(p=>p<-5); if(target==null) target = dir>0? tw.scrollWidth : -tw.scrollWidth; tw.scrollBy({left:target,behavior:"smooth"}); };
+  const tw = document.querySelector(".tablewrap"); tw.scrollLeft = keepScroll;
+  const labW = () => tw.querySelector("th.lab").offsetWidth;
+  const jump = dir => { const ths=[...document.querySelectorAll("th[data-dayanchor]")]; const x0=tw.getBoundingClientRect().left+labW(); const pos=ths.map(th=>th.getBoundingClientRect().left-x0); let target = dir>0 ? pos.find(p=>p>5) : [...pos].reverse().find(p=>p<-5); if(target==null) target = dir>0? tw.scrollWidth : -tw.scrollWidth; tw.scrollBy({left:target,behavior:"smooth"}); };
   $("#scrL").onclick=()=>jump(-1); $("#scrR").onclick=()=>jump(1);
   drawChart(now);
 }
