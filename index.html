@@ -128,11 +128,50 @@ footer a{color:inherit}
   .days{grid-template-columns:repeat(2,1fr);gap:6px}
   .day .big{font-size:20px}
 }
+.viewseg{margin-left:auto}
+#simple{display:none}
+body.simple #simple{display:block}
+body.simple .tcard, body.simple #content{display:none}
+.hero{display:flex;gap:14px;align-items:center}
+.hero .ico{width:84px;height:84px;flex:none}
+.hero .temp{font-size:46px;font-weight:650;letter-spacing:-.03em;line-height:1}
+.hero .what{font-size:15px;font-weight:600;margin-top:2px}
+.hero .wind{font-size:12.5px;color:var(--text-2);margin-top:3px}
+.summary{margin-top:10px;font-size:13.5px;line-height:1.45;color:var(--text)}
+.summary b{font-weight:600}
+.ribbon{margin-top:4px}
+.ribbon .labels,.ribbon .temps{display:flex}
+.ribbon .labels span,.ribbon .temps span{flex:1;text-align:center;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ribbon .temps span{font-size:12.5px;color:var(--text);font-weight:600}
+.ribbon .icons{display:flex}
+.ribbon .icons span{flex:1;display:flex;justify-content:center}
+.ribbon .icons svg{width:26px;height:26px}
+.ribbon .band{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:4px 0;position:relative}
+.ribbon .band i{flex:1}
+.ribbon .band .rain{position:absolute;bottom:0;height:5px;background:#3d5bd9;border-radius:2px}
+.ribbon .now{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);border-radius:1px}
+.tips{display:flex;flex-wrap:wrap;gap:6px}
+.tip{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:var(--surface-2);font-size:12.5px}
+.tip.ok{opacity:.7}
+.week .d{display:grid;grid-template-columns:62px 30px 1fr 64px 62px;align-items:center;gap:6px;padding:6px 0;border-top:1px solid var(--border)}
+.week .d:first-child{border-top:0}
+.week .dn{font-weight:600;text-transform:capitalize;font-size:13px}
+.week svg{width:28px;height:28px}
+.trange{display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums;font-size:12.5px}
+.trange .lo{color:var(--text-2);width:22px;text-align:right}
+.trange .hi{font-weight:600;width:22px}
+.trange .track{flex:1;height:6px;border-radius:3px;background:var(--surface-2);position:relative}
+.trange .track i{position:absolute;top:0;bottom:0;border-radius:3px}
+.week .rn{font-size:12px;color:#3d5bd9;text-align:right;white-space:nowrap}
+.week .rn small{display:block;color:var(--muted);font-size:10px}
+.week .wd{font-size:12px;text-align:right;white-space:nowrap}
+.week .wd span{display:inline-block;padding:1px 6px;border-radius:6px;font-weight:600;font-variant-numeric:tabular-nums}
+@media (prefers-color-scheme: dark){ .week .rn{color:#8fa4ff} }
 </style>
 </head>
 <body>
 <header>
-  <div class="titlebar"><h1 id="title">Vent & météo</h1><span class="sub" id="subtitle"></span></div>
+  <div class="titlebar"><h1 id="title">Vent & météo</h1><span class="sub" id="subtitle"></span><div class="seg viewseg" id="viewSeg"></div></div>
   <div class="spotsbar">
     <div class="chips" id="spots"></div>
     <div class="search">
@@ -142,6 +181,7 @@ footer a{color:inherit}
   </div>
 </header>
 <main>
+  <section id="simple"></section>
   <section class="card tcard">
     <div class="controls">
       <div class="seg" id="modelSeg"></div>
@@ -193,6 +233,7 @@ let state = {
   unit: store.get("unit", "kn"),
   step: store.get("step", 3),
   days: store.get("days", 10),
+  view: store.get("view", "detail"),
   hidden: store.get("hidden", []),
   data: null, marine: null, loading: false,
 };
@@ -250,6 +291,8 @@ function renderControls(){
   $("#modelSeg").innerHTML = MODELS.map(m=>`<button data-m="${m.id}" class="${m.id===state.model?"on":""}" title="${m.label}">${m.short}</button>`).join("");
   $("#unitSeg").innerHTML = Object.entries(UNITS).map(([k,u])=>`<button data-u="${k}" class="${k===state.unit?"on":""}">${u.short}</button>`).join("");
   $("#stepSeg").innerHTML = [1,2,3,6].map(s=>`<button data-s="${s}" class="${s===state.step?"on":""}">${s}h</button>`).join("");
+  document.body.classList.toggle("simple", state.view==="simple");
+  $("#viewSeg").innerHTML = [["simple","Simple"],["detail","Détaillé"]].map(([k,l])=>`<button data-view="${k}" class="${k===state.view?"on":""}">${l}</button>`).join("");
   $("#daysSeg").innerHTML = [3,5,7,10,14].map(d=>`<button data-days="${d}" class="${d===state.days?"on":""}">${d}j</button>`).join("");
   $("#spots").innerHTML = state.spots.map((s,i)=>`<button class="chip ${i===state.spotIdx?"on":""}" data-i="${i}">${s.name}${state.spots.length>1?`<span class="x" data-del="${i}" title="Retirer">✕</span>`:""}</button>`).join("");
 }
@@ -259,6 +302,7 @@ document.addEventListener("click", e=>{
   const chip = t.closest(".chip[data-i]"); if(chip){ state.spotIdx=+chip.dataset.i; store.set("spotIdx",state.spotIdx); renderControls(); load(); return; }
   if(t.dataset.m){ state.model=t.dataset.m; store.set("model",state.model); renderControls(); render(); return; }
   if(t.dataset.u){ state.unit=t.dataset.u; store.set("unit",state.unit); renderControls(); render(); return; }
+  if(t.dataset.view){ state.view=t.dataset.view; store.set("view",state.view); renderControls(); render(); return; }
   if(t.dataset.days){ state.days=+t.dataset.days; store.set("days",state.days); renderControls(); load(); return; }
   if(t.dataset.s){ state.step=+t.dataset.s; store.set("step",state.step); renderControls(); render(); return; }
   const day = t.closest(".day[data-day]"); if(day){ const th=document.querySelector(`th[data-dayanchor="${day.dataset.day}"]`); const tw=document.querySelector(".tablewrap"); if(th&&tw){ tw.scrollTo({left:th.offsetLeft-tw.querySelector("th.lab").offsetWidth,behavior:"smooth"}); document.querySelector(".tcard").scrollIntoView({behavior:"smooth",block:"start"}); } return; }
@@ -293,7 +337,7 @@ async function load(){
   const spot = state.spots[state.spotIdx]; if(!spot) return;
   $("#title").textContent = spot.name;
   $("#subtitle").textContent = `${spot.lat.toFixed(2)}°, ${spot.lon.toFixed(2)}°`;
-  $("#tableArea").innerHTML = `<div class="status">Chargement des modèles…</div>`; $("#content").innerHTML = "";
+  $("#tableArea").innerHTML = `<div class="status">Chargement des modèles…</div>`; $("#content").innerHTML = ""; $("#simple").innerHTML = `<div class="card"><div class="status">Chargement…</div></div>`;
   const base = `latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&wind_speed_unit=kn`;
   const reqs = MODELS.map(m=>fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&models=${m.id}`).then(r=>r.ok?r.json():null).catch(()=>null));
   const marineReq = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&hourly=wave_height,wave_period,wave_direction`).then(r=>r.ok?r.json():null).catch(()=>null);
@@ -305,7 +349,7 @@ async function load(){
   if(spot !== state.spots[state.spotIdx]) return; // spot changé entre-temps
   state.data = {}; MODELS.forEach((m,i)=>{ if(res[i]&&res[i].hourly) state.data[m.id]=res[i].hourly; });
   state.marine = marine&&marine.hourly ? marine.hourly : null;
-  if(!Object.keys(state.data).length){ $("#tableArea").innerHTML = `<div class="status err">Impossible de récupérer les prévisions.</div><div class="status">Si tu regardes cette page dans l'aperçu de Claude, c'est normal : l'aperçu bloque l'accès à Internet.<br>Télécharge le fichier et ouvre-le dans Safari, Chrome ou Firefox.</div>`; return; }
+  if(!Object.keys(state.data).length){ $("#simple").innerHTML = `<div class="card"><div class="status err">Impossible de récupérer les prévisions.</div></div>`; $("#tableArea").innerHTML = `<div class="status err">Impossible de récupérer les prévisions.</div><div class="status">Si tu regardes cette page dans l'aperçu de Claude, c'est normal : l'aperçu bloque l'accès à Internet.<br>Télécharge le fichier et ouvre-le dans Safari, Chrome ou Firefox.</div>`; return; }
   render();
 }
 
@@ -324,9 +368,161 @@ function mergedSeries(){
   return H;
 }
 
+
+// ================== VUE SIMPLE ==================
+// État du ciel déduit des données (nuages, pluie, température)
+function sky(cloud, rain, temp, day){
+  if(rain!=null && rain>=0.2){ if(temp!=null && temp<=1) return "snow"; return rain>=2 ? "heavy" : "rain"; }
+  if(cloud==null) return day?"partly":"night";
+  if(cloud<20) return day?"clear":"night";
+  if(cloud<60) return day?"partly":"nightpartly";
+  if(cloud<85) return "mostly";
+  return "overcast";
+}
+const SKY_TXT = {clear:"Ensoleillé", night:"Ciel dégagé", partly:"Éclaircies", nightpartly:"Quelques nuages", mostly:"Plutôt nuageux", overcast:"Couvert", rain:"Pluie", heavy:"Forte pluie", snow:"Neige"};
+const SKY_RANK = {clear:0,night:0,partly:1,nightpartly:1,mostly:2,overcast:3,rain:4,heavy:5,snow:5};
+function skyIcon(k){
+  const sun = `<circle cx="24" cy="24" r="9" fill="#ffc21a"/><g stroke="#ffc21a" stroke-width="3" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${24+14*Math.cos(r)}" y1="${24+14*Math.sin(r)}" x2="${24+19*Math.cos(r)}" y2="${24+19*Math.sin(r)}"/>`}).join("")}</g>`;
+  const moon = `<path d="M30 9a15 15 0 1 0 10 25A12 12 0 0 1 30 9z" fill="#c9d3ef"/>`;
+  const cloud = (x=0,y=0,c="#c7ccd6") => `<path transform="translate(${x} ${y})" d="M14 38h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2A8 8 0 0 0 14 38z" fill="${c}"/>`;
+  const drops = n => `<g stroke="#3d7bff" stroke-width="3" stroke-linecap="round">${[16,25,34].slice(0,n).map(x=>`<line x1="${x}" y1="41" x2="${x-3}" y2="47"/>`).join("")}</g>`;
+  const flakes = `<g fill="#9fc2ff">${[16,25,34].map(x=>`<circle cx="${x}" cy="44" r="2.6"/>`).join("")}</g>`;
+  const body = {
+    clear: sun, night: moon,
+    partly: `<g transform="translate(-6 -6) scale(.85)">${sun}</g>${cloud(4,4,"#d5dae3")}`,
+    nightpartly: `<g transform="translate(-4 -6) scale(.8)">${moon}</g>${cloud(4,4,"#b7becb")}`,
+    mostly: `${cloud(-6,-6,"#e1e4ea")}${cloud(2,2,"#b9c0cc")}`,
+    overcast: `${cloud(-6,-6,"#a9b0bd")}${cloud(2,2,"#8d95a3")}`,
+    rain: `${cloud(0,-6,"#a3abb8")}${drops(2)}`,
+    heavy: `${cloud(0,-6,"#7f8796")}${drops(3)}`,
+    snow: `${cloud(0,-6,"#b3bac6")}${flakes}`,
+  }[k];
+  return `<svg viewBox="0 0 48 48">${body}</svg>`;
+}
+const BAND = {clear:"#ffe28a", partly:"#f3e7b8", mostly:"#d6dbe3", overcast:"#b8bfca", rain:"#8fa7ee", heavy:"#5f7fe0", snow:"#e3ecff", night:"#2f3c5c", nightpartly:"#3d4864"};
+const kmh = kn => kn==null?null:kn*1.852;
+function windWords(k){ if(k==null) return ""; if(k<12) return "vent faible"; if(k<29) return "petite brise"; if(k<40) return "vent modéré"; if(k<50) return "vent soutenu"; if(k<62) return "vent fort"; return "coup de vent"; }
+const dirLong = d => ({N:"du nord",NNE:"du nord",NE:"du nord-est",ENE:"d'est",E:"d'est",ESE:"d'est",SE:"du sud-est",SSE:"du sud",S:"du sud",SSO:"du sud",SO:"du sud-ouest",OSO:"d'ouest",O:"d'ouest",ONO:"d'ouest",NO:"du nord-ouest",NNO:"du nord"})[dirName(d)]||"";
+
+// Accord des modèles sur la pluie, heure par heure
+function rainAgreement(){
+  const out = {};
+  RAIN_ROWS.forEach(r=>{ const h = r.src==="rain" ? state.rain?.[r.id] : state.data?.[r.id]; if(!h) return;
+    h.time.forEach((t,i)=>{ const v=h.precipitation[i]; if(v==null) return; (out[t] ||= {n:0,wet:0}); out[t].n++; if(v>=0.2) out[t].wet++; }); });
+  return out;
+}
+
+function renderSimple(H){
+  const nowH = new Date(); nowH.setMinutes(0,0,0);
+  const i0 = H.time.findIndex(t=>new Date(t)>=nowH && H.temperature_2m[H.time.indexOf(t)]!=null);
+  if(i0<0){ $("#simple").innerHTML = ""; return; }
+  const agree = rainAgreement();
+  const st = i => sky(H.cloud_cover[i], H.precipitation[i], H.temperature_2m[i], H.is_day?H.is_day[i]!==0:true);
+
+  // --- Maintenant ---
+  const k0 = st(i0), w0 = kmh(H.wind_speed_10m[i0]), g0 = kmh(H.wind_gusts_10m[i0]), d0 = H.wind_direction_10m[i0];
+  const lw0 = localWind(d0, H.wind_speed_10m[i0]);
+
+  // --- Résumé des prochaines périodes ---
+  const periods = [];
+  const hourOf = i => +H.time[i].slice(11,13);
+  const dayOf = i => H.time[i].slice(0,10);
+  const today = H.time[i0].slice(0,10);
+  const slot = h => h<6?"nuit":h<12?"matin":h<18?"aprem":"soir";
+  const label = (sl,d) => { const tom = d!==today; return {nuit: tom?"cette nuit":"cette nuit", matin: tom?"demain matin":"ce matin", aprem: tom?"demain après-midi":"cet après-midi", soir: tom?"demain soir":"ce soir"}[sl]; };
+  for(let i=i0;i<Math.min(H.time.length,i0+30);i++){
+    if(H.temperature_2m[i]==null) continue;
+    const key = dayOf(i)+slot(hourOf(i)); let p = periods[periods.length-1];
+    if(!p || p.key!==key){ if(periods.length>=4) break; p={key, label:label(slot(hourOf(i)),dayOf(i)), idx:[]}; periods.push(p); }
+    p.idx.push(i);
+  }
+  const worst = idx => { // état représentatif : le plus fréquent, la pluie l'emporte si ≥2 h
+    const c={}; idx.forEach(i=>{const k=st(i);c[k]=(c[k]||0)+1;});
+    const wet = Object.entries(c).filter(([k])=>SKY_RANK[k]>=4).reduce((a,[,n])=>a+n,0);
+    if(wet>=2) return Object.entries(c).filter(([k])=>SKY_RANK[k]>=4).sort((a,b)=>b[1]-a[1])[0][0];
+    return Object.entries(c).sort((a,b)=>b[1]-a[1]||SKY_RANK[b[0]]-SKY_RANK[a[0]])[0][0];
+  };
+  const parts = periods.filter(p=>p.idx.length>=2).map(p=>{ const k=worst(p.idx); const r=p.idx.reduce((a,i)=>a+(H.precipitation[i]||0),0); const gmax=Math.max(...p.idx.map(i=>kmh(H.wind_gusts_10m[i])||0));
+    let txt = `<b>${p.label.charAt(0).toUpperCase()+p.label.slice(1)}</b> : ${SKY_TXT[k].toLowerCase()}`;
+    if(r>=0.5 && SKY_RANK[k]<4) txt += `, quelques gouttes`;
+    if(r>=0.5) txt += ` (${r<10?r.toFixed(1):Math.round(r)} mm)`;
+    if(gmax>=55) txt += `, rafales ${Math.round(gmax/5)*5} km/h`;
+    return txt; });
+  // fusionne les périodes identiques consécutives
+  const summary = parts.join(". ") + ".";
+
+  // --- Ruban des 24 prochaines heures ---
+  const rib = []; for(let i=i0;i<Math.min(H.time.length,i0+24);i++) if(H.temperature_2m[i]!=null) rib.push(i);
+  const marks = rib.filter((i,k)=>k%3===0);
+  const ribbon = `<div class="ribbon">
+    <div class="labels">${marks.map((i,k)=>`<span>${k===0?"Maint.":hourOf(i)+"h"}</span>`).join("")}</div>
+    <div class="icons">${marks.map(i=>`<span>${skyIcon(st(i))}</span>`).join("")}</div>
+    <div class="band">${rib.map(i=>`<i style="background:${BAND[st(i)]};${H.is_day&&H.is_day[i]===0&&!st(i).startsWith("night")?"filter:brightness(.72)":""}"></i>`).join("")}
+      ${rib.map((i,k)=>{const r=H.precipitation[i]||0; return r>=0.2?`<span class="rain" style="left:${k/rib.length*100}%;width:${100/rib.length}%;opacity:${Math.min(1,.35+r/3)}"></span>`:""}).join("")}</div>
+    <div class="temps">${marks.map(i=>`<span>${r0(H.temperature_2m[i])}°</span>`).join("")}</div>
+  </div>`;
+
+  // --- Conseils pour la journée ---
+  const hNow = nowH.getHours();
+  const tgtDay = hNow<17 ? today : H.time.find(t=>t.slice(0,10)>today)?.slice(0,10);
+  const win = H.time.map((t,i)=>i).filter(i=>H.time[i].slice(0,10)===tgtDay && hourOf(i)>=Math.max(7, tgtDay===today?hNow:0) && hourOf(i)<=21 && H.temperature_2m[i]!=null);
+  const when = tgtDay===today ? "Aujourd'hui" : "Demain";
+  let tips = [];
+  if(win.length){
+    const rainTot = win.reduce((a,i)=>a+(H.precipitation[i]||0),0);
+    const agreeMax = Math.max(0,...win.map(i=>{const a=agree[H.time[i]];return a&&a.n?a.wet/a.n:0;}));
+    const tmin = Math.min(...win.map(i=>H.temperature_2m[i])), tmax = Math.max(...win.map(i=>H.temperature_2m[i]));
+    const gmax = Math.max(...win.map(i=>kmh(H.wind_gusts_10m[i])||0));
+    const sunny = win.filter(i=>["clear","partly"].includes(st(i))).length;
+    const ddom = H.wind_direction_10m[win.reduce((a,i)=>(H.wind_speed_10m[i]||0)>(H.wind_speed_10m[a]||0)?i:a,win[0])];
+    if(rainTot>=1 || agreeMax>=0.5) tips.push(["☂️","Parapluie"]);
+    else if(rainTot>=0.2 || agreeMax>=0.3) tips.push(["🌂","Parapluie au cas où"]);
+    else tips.push(["✅","Pas de pluie prévue","ok"]);
+    if(tmin<8) tips.push(["🧣","Bien couvert"]); else if(tmin<15 || gmax>=45) tips.push(["🧥","Une veste"]); else if(tmax>=26) tips.push(["🩳","Tenue légère"]);
+    if(sunny>=4) tips.push(["😎","Lunettes de soleil"]);
+    if(gmax>=50){ const lw=localWind(ddom, gmax/1.852/1.4); tips.push(["💨",`${lw==="Mistral"?"Mistral, ":""}rafales ${Math.round(gmax/5)*5} km/h`]); }
+    if(rainTot<0.2 && agreeMax<0.3) tips.push(["👕", gmax>=55?"Linge dehors… bien accroché":"Linge dehors"]);
+  }
+
+  // --- Les prochains jours ---
+  const days = {};
+  H.time.forEach((t,i)=>{ if(H.temperature_2m[i]==null || t.slice(0,10)<today) return; const d=t.slice(0,10), h=+t.slice(11,13);
+    const o = days[d] ||= {t:[],day:[],r:0,w:[],dir:[],agree:0};
+    o.t.push(H.temperature_2m[i]); o.r += H.precipitation[i]||0;
+    if(h>=8&&h<=20){ o.day.push(i); o.w.push(kmh(H.wind_speed_10m[i])||0); o.dir.push([H.wind_direction_10m[i],H.wind_speed_10m[i]]); const a=agree[t]; if(a&&a.n) o.agree=Math.max(o.agree,a.wet/a.n); } });
+  const dl = Object.entries(days).filter(([,o])=>o.day.length>=4).slice(0,10);
+  const gmin = Math.min(...dl.map(([,o])=>Math.min(...o.t))), gmax2 = Math.max(...dl.map(([,o])=>Math.max(...o.t)));
+  const week = dl.map(([d,o],k)=>{
+    const lo=Math.min(...o.t), hi=Math.max(...o.t), span=Math.max(1,gmax2-gmin);
+    const [c1]=wgColor("temp",lo), [c2]=wgColor("temp",hi);
+    let sx=0,sy=0; o.dir.forEach(([dd,s])=>{ if(dd==null)return; sx+=Math.sin(dd*Math.PI/180)*s; sy+=Math.cos(dd*Math.PI/180)*s; });
+    const dd=(Math.atan2(sx,sy)*180/Math.PI+360)%360, wmax=Math.max(...o.w); const [wb,wf]=wgColor("wind", wmax/1.852);
+    const name = k===0 && d===today ? "Auj." : fmtDay(d+"T12:00",{weekday:"short"}).replace(".","")+" "+(+d.slice(8,10));
+    const rTxt = o.r>=0.5 ? `${o.r<10?o.r.toFixed(1):Math.round(o.r)} mm<small>${o.agree>=0.5?"probable":"possible"}</small>` : "";
+    return `<div class="d"><span class="dn">${name}</span>${skyIcon(worst(o.day))}
+      <div class="trange"><span class="lo">${r0(lo)}°</span><div class="track"><i style="left:${(lo-gmin)/span*100}%;width:${Math.max(4,(hi-lo)/span*100)}%;background:linear-gradient(90deg,${c1},${c2})"></i></div><span class="hi">${r0(hi)}°</span></div>
+      <span class="rn">${rTxt}</span>
+      <span class="wd">${arrowSVG(dd,"var(--text-2)")}<span style="background:${wb};color:${wf}">${Math.round(wmax)}</span></span></div>`; }).join("");
+
+  $("#simple").innerHTML = `
+    <div class="card">
+      <div class="hero">${skyIcon(k0).replace("<svg","<svg class=\"ico\"")}
+        <div><div class="temp">${r0(H.temperature_2m[i0])}°</div>
+          <div class="what">${SKY_TXT[k0]}</div>
+          <div class="wind">${arrowSVG(d0,"var(--text-2)")} ${windWords(w0)} ${dirLong(d0)}${lw0==="Mistral"?" (Mistral)":""} · ${Math.round(w0)} km/h, rafales ${Math.round(g0)}</div></div>
+      </div>
+      <div class="summary">${summary}</div>
+    </div>
+    <div class="card"><h2>Les prochaines 24 h</h2>${ribbon}</div>
+    ${tips.length?`<div class="card"><h2>${when}, on prévoit…</h2><div class="tips">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div></div>`:""}
+    <div class="card week"><h2>Les jours suivants <small>vent max de journée en km/h</small></h2>${week}</div>`;
+}
+
 function render(){
   if(!state.data) return;
   const mid = state.model; const H = mergedSeries();
+  document.body.classList.toggle("simple", state.view==="simple");
+  if(state.view==="simple"){ renderSimple(H); return; }
   const now = new Date(); now.setMinutes(0,0,0);
   const idx = H.time.map((t,i)=>i).filter(i=>{
     const d=new Date(H.time[i]);
