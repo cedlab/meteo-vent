@@ -86,6 +86,15 @@ table.fc td.w{font-weight:600;border-radius:3px;border:1px solid var(--surface)}
 table.fc td.night{opacity:.78}
 .arrow{display:inline-block;width:15px;height:15px;vertical-align:middle}
 .dirtxt{display:block;font-size:8.5px;color:var(--muted);line-height:1}
+.nowcast{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12px;color:var(--text-2);flex-wrap:wrap}
+.nowcast b{color:var(--text)}
+.nowcast .q{display:inline-flex;gap:2px}
+.nowcast .q span{display:inline-block;width:14px;height:14px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--border)}
+.nowcast .q span.h{margin-left:4px}
+table.fc tr.grp th{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;height:18px;padding-top:6px;text-align:left}
+table.fc tr.rm th.lab{font-size:9.5px}
+table.fc td.na{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--grid) 3px 4px)}
+table.fc tr.rm td{font-size:11px}
 .relay{color:var(--muted);font-size:11px;margin-top:6px}
 .rain{color:var(--accent);font-weight:600}
 .legend-scale{display:flex;gap:2px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:10.5px;color:var(--text-2)}
@@ -160,6 +169,16 @@ const MODELS = [
   {id:"gfs_seamless", short:"GFS", label:"GFS (NOAA)", color:"--m3"},
   {id:"ecmwf_ifs025", short:"ECMWF", label:"ECMWF IFS", color:"--m4"},
 ];
+// Modèles ajoutés uniquement pour comparer la pluie (Météo-France haute résolution)
+const RAIN_EXTRA = [
+  {id:"meteofrance_arome_france_hd", short:"AROME HD", title:"AROME France HD, 1,5 km, ~2 jours"},
+  {id:"meteofrance_arome_france", short:"AROME", title:"AROME France, 2,5 km, ~2 jours"},
+  {id:"meteofrance_arpege_europe", short:"ARPEGE", title:"ARPEGE Europe, 11 km, ~4 jours"},
+];
+const RAIN_ROWS = [...RAIN_EXTRA.map(m=>({...m,src:"rain"})),
+  {id:"icon_seamless", short:"ICON", title:"ICON (DWD)", src:"data"},
+  {id:"ecmwf_ifs025", short:"ECMWF", title:"ECMWF IFS", src:"data"},
+  {id:"gfs_seamless", short:"GFS", title:"GFS (NOAA)", src:"data"}];
 const UNITS = {kn:{label:"nœuds",short:"kn",f:1}, kmh:{label:"km/h",short:"km/h",f:1.852}};
 const HOURLY = "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,cloud_cover,precipitation,is_day";
 
@@ -278,7 +297,11 @@ async function load(){
   const base = `latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&wind_speed_unit=kn`;
   const reqs = MODELS.map(m=>fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&models=${m.id}`).then(r=>r.ok?r.json():null).catch(()=>null));
   const marineReq = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&hourly=wave_height,wave_period,wave_direction`).then(r=>r.ok?r.json():null).catch(()=>null);
-  const [res, marine] = await Promise.all([Promise.all(reqs), marineReq]);
+  const rainReqs = RAIN_EXTRA.map(m=>fetch(`https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${Math.min(state.days,4)}&hourly=precipitation&models=${m.id}`).then(r=>r.ok?r.json():null).catch(()=>null));
+  const nowReq = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&minutely_15=precipitation&forecast_minutely_15=16&past_minutely_15=1&models=meteofrance_seamless`).then(r=>r.ok?r.json():null).catch(()=>null);
+  const [res, marine, rainRes, now15] = await Promise.all([Promise.all(reqs), marineReq, Promise.all(rainReqs), nowReq]);
+  state.rain = {}; RAIN_EXTRA.forEach((m,i)=>{ if(rainRes[i]&&rainRes[i].hourly) state.rain[m.id]=rainRes[i].hourly; });
+  state.now15 = now15&&now15.minutely_15 ? now15.minutely_15 : null;
   if(spot !== state.spots[state.spotIdx]) return; // spot changé entre-temps
   state.data = {}; MODELS.forEach((m,i)=>{ if(res[i]&&res[i].hourly) state.data[m.id]=res[i].hourly; });
   state.marine = marine&&marine.hourly ? marine.hourly : null;
@@ -376,11 +399,45 @@ function render(){
     rowsMarine += `<tr><th class="lab" title="Période des vagues">Pér.<small>s</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_period[k]:null;return colored(c,"period",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
     rowsMarine += `<tr><th class="lab" title="Direction de la houle">D.h.</th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_direction[k]:null;return cell(c,arrowSVG(v,"var(--text-2)"))}).join("")}</tr>`;
   }
+  // Pluie par modèle (même pas horaire que le tableau) + ligne d'accord
+  const nCols = cols.length + 1;
+  const series = RAIN_ROWS.map(r=>{ const h = r.src==="rain" ? state.rain?.[r.id] : state.data?.[r.id]; if(!h) return null;
+    const map = Object.fromEntries(h.time.map((t,i)=>[t,i]));
+    const vals = cols.map(c=>{ let sum=0, any=false; for(let k=0;k<state.step;k++){ const t=H.time[c.i+k]; const j=map[t]; const v=j!=null?h.precipitation[j]:null; if(v!=null){sum+=v;any=true;} } return any?sum:null; });
+    return {r, vals}; }).filter(x=>x && x.vals.some(v=>v!=null));
+  let rowsRain = "";
+  if(series.length){
+    rowsRain += `<tr class="grp"><th class="lab" colspan="${nCols}" style="position:sticky;left:0">Pluie par modèle · mm/${state.step}h</th></tr>`;
+    series.forEach(({r,vals})=>{
+      rowsRain += `<tr class="rm"><th class="lab" title="${r.title}">${r.short}</th>${cols.map((c,k)=>{ const v=vals[k]; if(v==null) return cell(c,"","na"); return v>=0.1?colored(c,"rain",v/state.step,v<1?v.toFixed(1):Math.round(v)):cell(c,""); }).join("")}</tr>`;
+    });
+    rowsRain += `<tr class="rm"><th class="lab" title="Nombre de modèles qui prévoient au moins 0,2 mm">Accord</th>${cols.map((c,k)=>{ const avail=series.filter(x=>x.vals[k]!=null); if(!avail.length) return cell(c,"","na"); const n=avail.filter(x=>x.vals[k]>=0.2).length; if(!n) return cell(c,`<span style="color:var(--muted);font-size:9.5px">0/${avail.length}</span>`); const f=n/avail.length; return cell(c,`${n}/${avail.length}`,"w",`background:rgba(110,110,250,${(0.15+0.75*f).toFixed(2)});color:${f>0.6?"#fff":"var(--text)"};font-size:10px`); }).join("")}</tr>`;
+  }
+
+  // Bandeau pluie dans les 4 prochaines heures (AROME au quart d'heure)
+  let nowcast = "";
+  const Q = state.now15;
+  if(Q && Q.precipitation && Q.precipitation.some(v=>v!=null)){
+    const t0 = new Date(Date.now()-15*60000);
+    const q = Q.time.map((t,i)=>({t, v:Q.precipitation[i]})).filter(x=>new Date(x.t)>=t0 && x.v!=null).slice(0,16);
+    if(q.length){
+      const wet = q.filter(x=>x.v>=0.1);
+      const hm = t => t.slice(11,16).replace(":","h");
+      const minus15 = t => { const d=new Date(new Date(t).getTime()-15*60000); return `${String(d.getHours()).padStart(2,"0")}h${String(d.getMinutes()).padStart(2,"0")}`; };
+      let msg;
+      if(!wet.length) msg = `<b>Pas de pluie</b> prévue d'ici ${hm(q[q.length-1].t)}`;
+      else { const first=wet[0], last=wet[wet.length-1], tot=wet.reduce((a,x)=>a+x.v,0);
+        msg = new Date(first.t).getTime()-15*60000<=Date.now() ? `<b>Pluie en cours</b>, jusqu'à ~${hm(last.t)} · ${tot.toFixed(1)} mm` : `<b>Pluie vers ${minus15(first.t)}</b> jusqu'à ~${hm(last.t)} · ${tot.toFixed(1)} mm`; }
+      const boxes = q.map((x,i)=>{ const [bg]=wgColor("rain", x.v*4); return `<span class="${i&&x.t.slice(14,16)==="00"?"h":""}" title="${minus15(x.t)}–${hm(x.t)} : ${x.v.toFixed(1)} mm" style="background:${x.v>=0.05?bg:"transparent"}"></span>`; }).join("");
+      nowcast = `<div class="nowcast">☂ ${msg}<span class="q">${boxes}</span><span style="color:var(--muted);font-size:10.5px">AROME · pas de 15 min</span></div>`;
+    }
+  }
+
   const scale = [3,6,9,12,15,18,21,24,27,30,35,40,50,60].map(kn=>{const [bg,fg]=windColor(kn);return `<span class="sw" style="background:${bg};color:${fg};border:1px solid var(--border)">${Math.round(kn*UNITS[state.unit].f)}</span>`}).join("");
 
   const tw0 = document.querySelector(".tablewrap"); const keepScroll = tw0 && tw0.dataset.spot===String(state.spotIdx) ? tw0.scrollLeft : 0;
-  $("#tableArea").innerHTML = `
-      <div class="tablewrap" data-spot="${state.spotIdx}"><table class="fc">${rowDays}${rowH}${rowS}${rowW}${rowG}${rowD}${rowT}${rowC}${rowP}${rowsMarine}</table></div>
+  $("#tableArea").innerHTML = `${nowcast}
+      <div class="tablewrap" data-spot="${state.spotIdx}"><table class="fc">${rowDays}${rowH}${rowS}${rowW}${rowG}${rowD}${rowT}${rowC}${rowP}${rowsMarine}${rowsRain}</table></div>
       <div class="relay">${mInfo.label}${relay}</div>
       <div class="legend-scale"><span style="margin-right:4px">${unit} :</span>${scale}<span style="margin-left:4px">+</span></div>`;
   $("#content").innerHTML = `
