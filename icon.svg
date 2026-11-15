@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38b6f0"/>
+      <stop offset="0.62" stop-color="#1a78c9"/>
+      <stop offset="1" stop-color="#0c3a6e"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f4f8f"/>
+      <stop offset="1" stop-color="#082a52"/>
+    </linearGradient>
+    <linearGradient id="scale" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#67f7f1"/>
+      <stop offset="0.25" stop-color="#00ff00"/>
+      <stop offset="0.5" stop-color="#fff000"/>
+      <stop offset="0.75" stop-color="#ff322c"/>
+      <stop offset="1" stop-color="#ff0aff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+  <!-- rafales -->
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 300 H600 C690 300 735 240 712 185 C690 133 615 135 598 190" stroke-width="58"/>
+    <path d="M110 448 H760 C858 448 905 528 868 590 C835 645 755 638 742 580" stroke-width="58"/>
+    <path d="M220 590 H560" stroke-width="58" opacity=".85"/>
+  </g>
+  <!-- mer -->
+  <path d="M0 740 C110 690 210 690 320 740 C430 790 530 790 640 740 C750 690 860 690 1024 745 V1024 H0 Z" fill="url(#sea)"/>
+  <path d="M0 740 C110 690 210 690 320 740 C430 790 530 790 640 740 C750 690 860 690 1024 745" fill="none" stroke="#9fd8ff" stroke-width="16" opacity=".55"/>
+  <!-- échelle de couleurs -->
+  <rect x="150" y="868" width="724" height="46" rx="23" fill="url(#scale)"/>
+</svg>
