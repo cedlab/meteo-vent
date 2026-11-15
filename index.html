@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vent & météo – spots</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f4f3f0; --surface:#fcfcfb; --surface-2:#f0efec; --border:#e2e1dc;
+  --text:#0b0b0b; --text-2:#52514e; --muted:#8a8984;
+  --accent:#2a78d6;
+  --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100;
+  --grid:#e8e7e2;
+  --s100:#cde2fb;--s150:#b7d3f6;--s200:#9ec5f4;--s250:#86b6ef;--s300:#6da7ec;--s350:#5598e7;
+  --s400:#3987e5;--s450:#2a78d6;--s500:#256abf;--s550:#1c5cab;--s600:#184f95;--s650:#104281;--s700:#0d366b;
+  --s0:#f7f9fc;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#33332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8d8c84;
+    --accent:#3987e5;
+    --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500;
+    --grid:#2a2a27;
+    --s0:#1f2329;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:16px 20px 8px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:20px;margin:0;font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--text-2);font-size:13px}
+main{padding:0 20px 40px;max-width:1500px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit}
+.chip:hover{border-color:var(--text-2)}
+.chip.on{background:var(--text);color:var(--surface);border-color:var(--text)}
+.chip .x{opacity:.55;font-size:12px;padding-left:2px}
+.chip .x:hover{opacity:1}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--text-2);padding:6px 11px;font:inherit;cursor:pointer;border-right:1px solid var(--border)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--surface-2);color:var(--text);font-weight:600}
+.ctl-label{color:var(--muted);font-size:12px;margin-right:2px}
+.search{position:relative}
+.search input{font:inherit;padding:7px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);width:230px}
+.results{position:absolute;top:110%;left:0;z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:300px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
+.results div{padding:8px 12px;cursor:pointer}
+.results div:hover{background:var(--surface-2)}
+.results small{color:var(--muted)}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.day{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer}
+.day:hover{border-color:var(--text-2)}
+.day .d{font-weight:600;text-transform:capitalize}
+.day .big{font-size:26px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.day .big small{font-size:13px;font-weight:500;color:var(--text-2)}
+.day .meta{color:var(--text-2);font-size:12.5px;margin-top:4px;display:flex;flex-direction:column;gap:2px}
+.bar{height:6px;border-radius:3px;margin-top:8px;box-shadow:inset 0 0 0 1px var(--border)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--text-2);margin-top:6px}
+.tablewrap{overflow-x:auto;border-radius:8px}
+table.fc{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:13px}
+table.fc th,table.fc td{padding:0;text-align:center;min-width:38px;height:30px}
+table.fc th.lab{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;padding:0 12px 0 0;color:var(--text-2);font-weight:500;min-width:110px;white-space:nowrap}
+table.fc th.lab small{color:var(--muted)}
+table.fc td.dsep, table.fc th.dsep{border-left:2px solid var(--border)}
+table.fc tr.dayrow th{font-weight:600;text-align:left;padding-left:6px;text-transform:capitalize;height:26px;color:var(--text)}
+table.fc tr.hr td{color:var(--muted);font-size:12px}
+table.fc td.w{font-weight:600;border-radius:4px;border:1px solid var(--surface)}
+table.fc td.night{opacity:.78}
+.arrow{display:inline-block;width:18px;height:18px;vertical-align:middle}
+.dirtxt{display:block;font-size:10.5px;color:var(--muted);line-height:1}
+.rain{color:var(--accent);font-weight:600}
+.legend-scale{display:flex;gap:2px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--text-2)}
+.legend-scale span.sw{display:inline-block;width:30px;height:16px;border-radius:3px;text-align:center;line-height:16px;font-size:10.5px}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-2);margin-bottom:6px}
+.chart-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.chart-legend label{cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+#chartbox{position:relative}
+#tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 6px 18px rgba(0,0,0,.14);display:none;z-index:5;min-width:170px}
+#tip .t{font-weight:600;margin-bottom:4px;text-transform:capitalize}
+#tip .r{display:flex;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums}
+#tip i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+h2{font-size:15px;margin:0 0 10px;font-weight:620}
+h2 small{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:6px}
+.status{color:var(--text-2);padding:24px 0;text-align:center}
+.err{color:#d03b3b}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:10px}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="title">Vent & météo</h1>
+    <div class="sub" id="subtitle">Prévisions multi-modèles</div>
+  </div>
+  <div class="row">
+    <span class="ctl-label">Modèle</span>
+    <div class="seg" id="modelSeg"></div>
+    <span class="ctl-label" style="margin-left:8px">Unité</span>
+    <div class="seg" id="unitSeg"></div>
+    <span class="ctl-label" style="margin-left:8px">Pas</span>
+    <div class="seg" id="stepSeg"></div>
+    <span class="ctl-label" style="margin-left:8px">Jours</span>
+    <div class="seg" id="daysSeg"></div>
+  </div>
+</header>
+<main>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="chips" id="spots"></div>
+      <div class="search">
+        <input id="q" placeholder="Ajouter un spot (ville, plage…)" autocomplete="off">
+        <div class="results" id="results" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="content"><div class="status">Chargement…</div></div>
+</main>
+<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine</footer>
+
+<script>
+const DEFAULT_SPOTS = [
+  {name:"Toulon – Mourillon", lat:43.1046, lon:5.9370},
+  {name:"Hyères – L'Almanarre", lat:43.0672, lon:6.1300},
+  {name:"La Seyne – Les Sablettes", lat:43.0745, lon:5.8935},
+  {name:"Six-Fours – Le Brusc", lat:43.0735, lon:5.8010},
+];
+const MODELS = [
+  {id:"meteofrance_seamless", short:"AROME", label:"AROME / ARPEGE (Météo-France)", color:"--m1"},
+  {id:"icon_seamless", short:"ICON", label:"ICON (DWD)", color:"--m2"},
+  {id:"gfs_seamless", short:"GFS", label:"GFS (NOAA)", color:"--m3"},
+  {id:"ecmwf_ifs025", short:"ECMWF", label:"ECMWF IFS", color:"--m4"},
+];
+const UNITS = {kn:{label:"nœuds",short:"kn",f:1}, kmh:{label:"km/h",short:"km/h",f:1.852}};
+const HOURLY = "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,cloud_cover,precipitation,is_day";
+
+const store = {
+  get(k,d){try{const v=localStorage.getItem("wv_"+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("wv_"+k,JSON.stringify(v))}catch(e){}}
+};
+let state = {
+  spots: store.get("spots", DEFAULT_SPOTS),
+  spotIdx: store.get("spotIdx", 0),
+  model: store.get("model", "meteofrance_seamless"),
+  unit: store.get("unit", "kn"),
+  step: store.get("step", 3),
+  days: store.get("days", 10),
+  hidden: store.get("hidden", []),
+  data: null, marine: null, loading: false,
+};
+if (state.spotIdx >= state.spots.length) state.spotIdx = 0;
+
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const dirName = d => d==null?"":DIRS[Math.round(d/22.5)%16];
+const fmtDay = (d,opt={weekday:"long",day:"numeric"}) => new Date(d).toLocaleDateString("fr-FR",opt);
+const cv = kn => kn==null?null:kn*UNITS[state.unit].f;
+const r0 = v => v==null?"–":Math.round(v);
+
+// Échelles de couleurs Windguru : [valeur, r, g, b, alpha], interpolation linéaire
+const WG = {
+  wind:  [[0,255,255,255,1],[5,255,255,255,1],[8.9,103,247,241,1],[13.5,0,255,0,1],[18.8,255,240,0,1],[24.7,255,50,44,1],[31.7,255,10,200,1],[38,255,0,255,1],[45,150,50,255,1],[60,60,60,255,1],[70,0,0,255,1]],
+  temp:  [[-25,80,255,220,1],[-15,171,190,255,1],[0,255,255,255,1],[10,255,255,100,1],[20,255,170,0,1],[30,255,50,50,1],[35,255,0,110,1],[40,255,0,160,1],[50,255,80,220,1]],
+  cloud: [[0,255,255,255,1],[100,120,120,120,1]],
+  rain:  [[0,110,110,250,0],[3,110,110,250,1],[10,115,115,255,1]],   // mm/h
+  waves: [[0,255,255,255,1],[0.3,255,255,255,1],[3,122,131,255,1],[5,173,90,201,1],[8,255,80,100,1],[15,255,200,100,1]],
+  period:[[0,255,255,255,1],[10,255,255,255,1],[20,252,81,81,1]],
+};
+const isDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
+function wgColor(scale, v){
+  if(v==null) return ["transparent","var(--muted)"];
+  const s = WG[scale]; let c;
+  if(v<=s[0][0]) c=s[0].slice(1); else if(v>=s[s.length-1][0]) c=s[s.length-1].slice(1);
+  else { for(let i=1;i<s.length;i++){ if(v<=s[i][0]){ const a=s[i-1], b=s[i], t=(v-a[0])/(b[0]-a[0]); c=[1,2,3,4].map(k=>a[k]+(b[k]-a[k])*t); break; } } }
+  const [r,g,b,al] = c;
+  // en mode sombre, les cases blanches (vent faible, mer plate…) se fondent dans le fond
+  if(isDark() && r>248 && g>248 && b>248) return ["transparent","var(--text)"];
+  const bright = Math.sqrt(r*r*.241+g*g*.691+b*b*.068);
+  const fg = al<0.5 ? "var(--text)" : (bright<140 ? "#fff" : "#202020");
+  return [`rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${al.toFixed(3)})`, fg];
+}
+const windColor = kn => wgColor("wind", kn);
+
+function localWind(dir, kn){
+  if(dir==null||kn==null||kn<12) return null;
+  if(dir>=280&&dir<=345) return "Mistral";
+  if(dir>=60&&dir<=120) return "Vent d'est";
+  if(dir>=200&&dir<280) return "Ouest / Labé";
+  if(dir>=120&&dir<200) return "Sirocco / Marin";
+  return null;
+}
+
+function arrowSVG(dir, color){
+  if(dir==null) return "";
+  // dir = provenance ; la flèche montre où va le vent
+  return `<svg class="arrow" viewBox="0 0 20 20" style="transform:rotate(${dir+180}deg)"><path d="M10 2 L15 14 L10 11 L5 14 Z" fill="${color}"/></svg>`;
+}
+
+// ---------- Contrôles ----------
+function renderControls(){
+  $("#modelSeg").innerHTML = MODELS.map(m=>`<button data-m="${m.id}" class="${m.id===state.model?"on":""}" title="${m.label}">${m.short}</button>`).join("");
+  $("#unitSeg").innerHTML = Object.entries(UNITS).map(([k,u])=>`<button data-u="${k}" class="${k===state.unit?"on":""}">${u.short}</button>`).join("");
+  $("#stepSeg").innerHTML = [1,2,3,6].map(s=>`<button data-s="${s}" class="${s===state.step?"on":""}">${s} h</button>`).join("");
+  $("#daysSeg").innerHTML = [3,5,7,10,14].map(d=>`<button data-days="${d}" class="${d===state.days?"on":""}">${d}</button>`).join("");
+  $("#spots").innerHTML = state.spots.map((s,i)=>`<button class="chip ${i===state.spotIdx?"on":""}" data-i="${i}">${s.name}${state.spots.length>1?`<span class="x" data-del="${i}" title="Retirer">✕</span>`:""}</button>`).join("");
+}
+document.addEventListener("click", e=>{
+  const t = e.target;
+  if(t.dataset.del!==undefined){ e.stopPropagation(); const i=+t.dataset.del; state.spots.splice(i,1); if(state.spotIdx>=state.spots.length) state.spotIdx=state.spots.length-1; else if(i<state.spotIdx) state.spotIdx--; store.set("spots",state.spots); store.set("spotIdx",state.spotIdx); renderControls(); load(); return; }
+  const chip = t.closest(".chip[data-i]"); if(chip){ state.spotIdx=+chip.dataset.i; store.set("spotIdx",state.spotIdx); renderControls(); load(); return; }
+  if(t.dataset.m){ state.model=t.dataset.m; store.set("model",state.model); renderControls(); render(); return; }
+  if(t.dataset.u){ state.unit=t.dataset.u; store.set("unit",state.unit); renderControls(); render(); return; }
+  if(t.dataset.days){ state.days=+t.dataset.days; store.set("days",state.days); renderControls(); load(); return; }
+  if(t.dataset.s){ state.step=+t.dataset.s; store.set("step",state.step); renderControls(); render(); return; }
+  const day = t.closest(".day[data-day]"); if(day){ const th=document.querySelector(`th[data-dayanchor="${day.dataset.day}"]`); if(th) th.scrollIntoView({behavior:"smooth",inline:"start",block:"nearest"}); return; }
+  if(!t.closest(".search")) $("#results").hidden = true;
+});
+
+// ---------- Recherche de spots ----------
+let qTimer;
+$("#q").addEventListener("input", e=>{
+  clearTimeout(qTimer); const q=e.target.value.trim();
+  if(q.length<2){ $("#results").hidden=true; return; }
+  qTimer = setTimeout(async ()=>{
+    try{
+      const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=fr&format=json`);
+      const j = await r.json(); const res = j.results||[];
+      const box = $("#results");
+      box.innerHTML = res.length ? res.map((p,i)=>`<div data-r="${i}">${p.name} <small>${[p.admin2||p.admin1,p.country].filter(Boolean).join(", ")}</small></div>`).join("") : `<div><small>Aucun résultat</small></div>`;
+      box.hidden=false;
+      box.querySelectorAll("[data-r]").forEach(el=>el.onclick=()=>{
+        const p=res[+el.dataset.r];
+        state.spots.push({name:p.name, lat:p.latitude, lon:p.longitude});
+        state.spotIdx = state.spots.length-1;
+        store.set("spots",state.spots); store.set("spotIdx",state.spotIdx);
+        $("#q").value=""; box.hidden=true; renderControls(); load();
+      });
+    }catch(err){ $("#results").innerHTML=`<div><small class="err">Recherche indisponible</small></div>`; $("#results").hidden=false; }
+  }, 280);
+});
+
+// ---------- Données ----------
+async function load(){
+  const spot = state.spots[state.spotIdx]; if(!spot) return;
+  $("#title").textContent = spot.name;
+  $("#subtitle").textContent = `${spot.lat.toFixed(3)}°, ${spot.lon.toFixed(3)}° · prévisions sur ${state.days} jours`;
+  $("#content").innerHTML = `<div class="status">Chargement des modèles…</div>`;
+  const base = `latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&wind_speed_unit=kn`;
+  const reqs = MODELS.map(m=>fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&models=${m.id}`).then(r=>r.ok?r.json():null).catch(()=>null));
+  const marineReq = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&hourly=wave_height,wave_period,wave_direction`).then(r=>r.ok?r.json():null).catch(()=>null);
+  const [res, marine] = await Promise.all([Promise.all(reqs), marineReq]);
+  if(spot !== state.spots[state.spotIdx]) return; // spot changé entre-temps
+  state.data = {}; MODELS.forEach((m,i)=>{ if(res[i]&&res[i].hourly) state.data[m.id]=res[i].hourly; });
+  state.marine = marine&&marine.hourly ? marine.hourly : null;
+  if(!Object.keys(state.data).length){ $("#content").innerHTML = `<div class="status err">Impossible de récupérer les prévisions.</div><div class="status">Si tu regardes cette page dans l'aperçu de Claude, c'est normal : l'aperçu bloque l'accès à Internet.<br>Télécharge le fichier et ouvre-le dans Safari, Chrome ou Firefox.</div>`; return; }
+  render();
+}
+
+// Série continue : modèle choisi, puis relais ECMWF → GFS → ICON → AROME au-delà de son horizon
+const FIELDS = ["wind_speed_10m","wind_gusts_10m","wind_direction_10m","temperature_2m","cloud_cover","precipitation","is_day"];
+function mergedSeries(){
+  const order = [state.model,"ecmwf_ifs025","gfs_seamless","icon_seamless","meteofrance_seamless"].filter((m,i,a)=>a.indexOf(m)===i && state.data[m]);
+  const ref = order.map(m=>state.data[m]).sort((a,b)=>b.time.length-a.time.length)[0];
+  const maps = Object.fromEntries(order.map(m=>[m, Object.fromEntries(state.data[m].time.map((t,i)=>[t,i]))]));
+  const H = {time:[], src:[]}; FIELDS.forEach(f=>H[f]=[]);
+  ref.time.forEach(t=>{
+    const m = order.find(m=>{const k=maps[m][t]; return k!=null && state.data[m].wind_speed_10m[k]!=null;});
+    H.time.push(t); H.src.push(m||null);
+    FIELDS.forEach(f=>{ const k=m?maps[m][t]:null; H[f].push(k==null?null:(state.data[m][f]?state.data[m][f][k]:null)); });
+  });
+  return H;
+}
+
+function render(){
+  if(!state.data) return;
+  const mid = state.model; const H = mergedSeries();
+  const now = new Date(); now.setMinutes(0,0,0);
+  const idx = H.time.map((t,i)=>i).filter(i=>{
+    const d=new Date(H.time[i]);
+    return d>=now && H.wind_speed_10m[i]!=null && d.getHours()%state.step===0;
+  });
+  const M = state.marine;
+  const mIndex = M ? Object.fromEntries(M.time.map((t,i)=>[t,i])) : {};
+  const unit = UNITS[state.unit].short;
+  const mInfo = MODELS.find(m=>m.id===mid);
+  const used = [...new Set(idx.map(i=>H.src[i]).filter(m=>m&&m!==mid))];
+  const firstRelay = idx.find(i=>H.src[i]!==mid);
+  const relay = used.length ? ` · relais ${used.map(m=>MODELS.find(x=>x.id===m).short).join(" puis ")} à partir de ${fmtDay(H.time[firstRelay],{weekday:"long",day:"numeric"})} ${H.time[firstRelay].slice(11,13)}h` : "";
+
+  // ----- Synthèse par jour -----
+  const byDay = {};
+  H.time.forEach((t,i)=>{
+    if(H.wind_speed_10m[i]==null) return;
+    const d=t.slice(0,10), h=+t.slice(11,13);
+    if(new Date(t)<now && d!==H.time.find(x=>new Date(x)>=now)?.slice(0,10)) return;
+    (byDay[d] ||= {w:[],g:[],dir:[],t:[],p:0,waves:[],src:{}});
+    const o=byDay[d]; o.src[H.src[i]]=(o.src[H.src[i]]||0)+1;
+    if(h>=8&&h<=19){ o.w.push(H.wind_speed_10m[i]); o.g.push(H.wind_gusts_10m[i]); o.dir.push([H.wind_direction_10m[i],H.wind_speed_10m[i]]); if(M&&mIndex[t]!=null&&M.wave_height[mIndex[t]]!=null) o.waves.push(M.wave_height[mIndex[t]]); }
+    if(H.temperature_2m[i]!=null) o.t.push(H.temperature_2m[i]);
+    o.p += H.precipitation[i]||0;
+  });
+  const dayCards = Object.entries(byDay).map(([d,o])=>{
+    if(!o.w.length) return "";
+    const avg = o.w.reduce((a,b)=>a+b,0)/o.w.length, mx=Math.max(...o.w), gx=Math.max(...o.g.filter(v=>v!=null));
+    // direction dominante pondérée par la force
+    let sx=0,sy=0; o.dir.forEach(([d,s])=>{ if(d==null)return; sx+=Math.sin(d*Math.PI/180)*s; sy+=Math.cos(d*Math.PI/180)*s; });
+    const dd = (Math.atan2(sx,sy)*180/Math.PI+360)%360;
+    const [bg] = windColor(mx); const lw = localWind(dd, mx);
+    const wv = o.waves.length ? Math.max(...o.waves) : null;
+    return `<div class="day" data-day="${d}">
+      <div class="d">${fmtDay(d+"T12:00")}</div>
+      <div class="big">${r0(cv(mx))}<small> ${unit} max</small></div>
+      <div class="meta">
+        <span>${arrowSVG(dd,"var(--text-2)")} ${dirName(dd)} · moy. ${r0(cv(avg))} · raf. ${r0(cv(gx))}</span>
+        <span>${r0(Math.min(...o.t))}° / ${r0(Math.max(...o.t))}°${o.p>=0.2?` · <span class="rain">${o.p.toFixed(1)} mm</span>`:" · sec"}${wv!=null?` · houle ${wv.toFixed(1)} m`:""}</span>
+      </div>
+      <div class="bar" style="background:${bg}"></div>
+      ${lw?`<span class="tag">${lw}</span>`:""}
+      ${(()=>{const top=Object.entries(o.src).sort((a,b)=>b[1]-a[1])[0][0];return top!==mid?`<span class="tag">via ${MODELS.find(m=>m.id===top).short}</span>`:""})()}
+    </div>`;
+  }).join("");
+
+  // ----- Tableau horaire façon Windguru -----
+  let lastDay=null; const dayHead=[], hrs=[], cols=[];
+  idx.forEach(i=>{
+    const t=H.time[i], d=t.slice(0,10); const sep = d!==lastDay; lastDay=d;
+    cols.push({i,t,sep,d});
+  });
+  // ligne des jours (colspan)
+  const groups=[]; cols.forEach(c=>{ if(c.sep) groups.push({d:c.d,n:0}); groups[groups.length-1].n++; });
+  const rowDays = `<tr class="dayrow"><th class="lab"></th>${groups.map(g=>`<th colspan="${g.n}" class="dsep" data-dayanchor="${g.d}">${g.n>=2?fmtDay(g.d+"T12:00",{weekday:g.n>=4?"long":"short",day:"numeric"}):""}</th>`).join("")}</tr>`;
+  const cell = (c,inner,cls="",style="") => `<td class="${c.sep?"dsep ":""}${H.is_day&&H.is_day[c.i]===0?"night ":""}${cls}" style="${style}">${inner}</td>`;
+  const rowH = `<tr class="hr"><th class="lab">Heure</th>${cols.map(c=>cell(c,c.t.slice(11,13)+"h")).join("")}</tr>`;
+  let prevSrc=null;
+  const rowS = `<tr class="hr"><th class="lab">Modèle</th>${cols.map(c=>{const sc=H.src[c.i];const show=sc!==prevSrc;prevSrc=sc;return cell(c,show?`<span style="font-size:10.5px;white-space:nowrap">${MODELS.find(m=>m.id===sc)?.short||""}</span>`:"")}).join("")}</tr>`;
+  const rowW = `<tr><th class="lab">Vent <small>${unit}</small></th>${cols.map(c=>{const v=H.wind_speed_10m[c.i];const [bg,fg]=windColor(v);return cell(c,r0(cv(v)),"w",`background:${bg};color:${fg}`)}).join("")}</tr>`;
+  const rowG = `<tr><th class="lab">Rafales <small>${unit}</small></th>${cols.map(c=>{const v=H.wind_gusts_10m[c.i];const [bg,fg]=windColor(v);return cell(c,r0(cv(v)),"w",`background:${bg};color:${fg}`)}).join("")}</tr>`;
+  const rowD = `<tr><th class="lab">Direction</th>${cols.map(c=>{const d=H.wind_direction_10m[c.i];return cell(c,`${arrowSVG(d,"var(--text)")}<span class="dirtxt">${dirName(d)}</span>`,"","height:40px")}).join("")}</tr>`;
+  const colored = (c,scale,v,txt) => { const [bg,fg]=wgColor(scale,v); return cell(c,txt,"w",`background:${bg};color:${fg};font-weight:500`); };
+  const rowT = `<tr><th class="lab">Température <small>°C</small></th>${cols.map(c=>{const v=H.temperature_2m[c.i];return colored(c,"temp",v,r0(v))}).join("")}</tr>`;
+  const rowC = `<tr><th class="lab">Nuages <small>%</small></th>${cols.map(c=>{const v=H.cloud_cover[c.i];return colored(c,"cloud",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
+  const rowP = `<tr><th class="lab">Pluie <small>mm/${state.step}h</small></th>${cols.map(c=>{let s=0;for(let k=0;k<state.step;k++){s+=H.precipitation[c.i+k]||0}return s>=0.1?colored(c,"rain",s/state.step,s<1?s.toFixed(1):Math.round(s)):cell(c,"")}).join("")}</tr>`;
+  let rowsMarine="";
+  if(M && M.wave_height.some(v=>v!=null)){
+    rowsMarine += `<tr><th class="lab">Houle <small>m</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_height[k]:null;return colored(c,"waves",v,v==null?"–":v.toFixed(1))}).join("")}</tr>`;
+    rowsMarine += `<tr><th class="lab">Période <small>s</small></th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_period[k]:null;return colored(c,"period",v,v==null?"–":Math.round(v))}).join("")}</tr>`;
+    rowsMarine += `<tr><th class="lab">Dir. houle</th>${cols.map(c=>{const k=mIndex[c.t];const v=k!=null?M.wave_direction[k]:null;return cell(c,arrowSVG(v,"var(--text-2)"))}).join("")}</tr>`;
+  }
+  const scale = [3,6,9,12,15,18,21,24,27,30,35,40,50,60].map(kn=>{const [bg,fg]=windColor(kn);return `<span class="sw" style="background:${bg};color:${fg};border:1px solid var(--border)">${Math.round(kn*UNITS[state.unit].f)}</span>`}).join("");
+
+  $("#content").innerHTML = `
+    <div class="card"><h2>Les ${Object.keys(byDay).length} prochains jours <small>${mInfo.label} · vent de journée 8h–19h · clic = aller au détail</small></h2><div class="days">${dayCards}</div></div>
+    <div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">Détail heure par heure <small>${mInfo.label}${relay}</small></h2><div class="seg"><button id="scrL" title="Jour précédent">◀</button><button id="scrR" title="Jour suivant">▶</button></div></div>
+      <div class="tablewrap"><table class="fc">${rowDays}${rowH}${rowS}${rowW}${rowG}${rowD}${rowT}${rowC}${rowP}${rowsMarine}</table></div>
+      <div class="legend-scale"><span style="margin-right:6px">Échelle (${unit}) :</span>${scale}<span style="margin-left:6px">+</span></div>
+    </div>
+    <div class="card"><h2>Comparaison des modèles <small>vent moyen à 10 m, ${unit}</small></h2>
+      <div class="chart-legend" id="clegend"></div>
+      <div id="chartbox"><svg id="chart" width="100%" height="300"></svg><div id="tip"></div></div>
+    </div>`;
+  const tw = document.querySelector(".tablewrap");
+  const jump = dir => { const ths=[...document.querySelectorAll("th[data-dayanchor]")]; const x0=tw.getBoundingClientRect().left+110; const pos=ths.map(th=>th.getBoundingClientRect().left-x0); let target = dir>0 ? pos.find(p=>p>5) : [...pos].reverse().find(p=>p<-5); if(target==null) target = dir>0? tw.scrollWidth : -tw.scrollWidth; tw.scrollBy({left:target,behavior:"smooth"}); };
+  $("#scrL").onclick=()=>jump(-1); $("#scrR").onclick=()=>jump(1);
+  drawChart(now);
+}
+
+// ---------- Graphique multi-modèles ----------
+function drawChart(now){
+  const svg = $("#chart"), box=$("#chartbox"), tip=$("#tip");
+  const avail = MODELS.filter(m=>state.data[m.id] && state.data[m.id].wind_speed_10m.some(v=>v!=null));
+  $("#clegend").innerHTML = avail.map(m=>`<label><input type="checkbox" data-hide="${m.id}" ${state.hidden.includes(m.id)?"":"checked"}><i style="background:var(${m.color})"></i>${m.label}</label>`).join("");
+  $("#clegend").querySelectorAll("input").forEach(inp=>inp.onchange=()=>{
+    const id=inp.dataset.hide; state.hidden = inp.checked ? state.hidden.filter(x=>x!==id) : [...state.hidden,id]; store.set("hidden",state.hidden); drawChart(now);
+  });
+  const shown = avail.filter(m=>!state.hidden.includes(m.id));
+  const ref = state.data[avail[0].id];
+  const times = ref.time.filter(t=>new Date(t)>=now);
+  const W = box.clientWidth || 900, Hh = 300, pl=36, pr=70, pt=12, pb=28;
+  svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);
+  const series = shown.map(m=>{const h=state.data[m.id];const map=Object.fromEntries(h.time.map((t,i)=>[t,i]));return {m, vals:times.map(t=>{const k=map[t];return k==null?null:cv(h.wind_speed_10m[k])}), gust:times.map(t=>{const k=map[t];return k==null?null:cv(h.wind_gusts_10m[k])})}});
+  let ymax = Math.max(10, ...series.flatMap(s=>s.vals.filter(v=>v!=null)));
+  const stepY = ymax>60?20:ymax>30?10:5; ymax = Math.ceil(ymax/stepY)*stepY;
+  const x = i => pl + (W-pl-pr) * i/(times.length-1);
+  const y = v => pt + (Hh-pt-pb)*(1-v/ymax);
+  const grid = getComputedStyle(document.documentElement).getPropertyValue("--grid");
+  let g = "";
+  for(let v=0; v<=ymax; v+=stepY){ g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`; }
+  times.forEach((t,i)=>{ if(t.slice(11,13)==="00"){ g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${Hh-pb}" stroke="var(--grid)" stroke-width="1"/>`; }
+    if(t.slice(11,13)==="12"){ g+=`<text x="${x(i)}" y="${Hh-8}" text-anchor="middle" font-size="11" fill="var(--text-2)">${fmtDay(t,{weekday:"short",day:"numeric"})}</text>`; } });
+  let lines="", ends=[];
+  series.forEach(s=>{
+    let d="", pen=false;
+    s.vals.forEach((v,i)=>{ if(v==null){pen=false;return;} d+=(pen?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1); pen=true; });
+    lines += `<path d="${d}" fill="none" stroke="var(${s.m.color})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    let li=s.vals.length-1; while(li>0&&s.vals[li]==null) li--;
+    ends.push({m:s.m, x:x(li), y:y(s.vals[li]), lx:x(li)});
+  });
+  // étiquettes directes sans chevauchement
+  const right = ends.filter(e=>e.lx>=W-pr-20).sort((a,b)=>a.y-b.y); for(let k=1;k<right.length;k++){ if(right[k].y-right[k-1].y<14) right[k].y=right[k-1].y+14; }
+  const labels = ends.map(e=>{const early=e.lx<W-pr-20;return `<text x="${early?e.lx:W-pr+8}" y="${early?e.y-8:e.y+4}" text-anchor="${early?"middle":"start"}" font-size="12" fill="var(--text-2)" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${e.m.short}</text>`}).join("");
+  svg.innerHTML = g + lines + labels + `<line id="xh" y1="${pt}" y2="${Hh-pb}" stroke="var(--text-2)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/><g id="dots"></g><rect x="${pl}" y="0" width="${W-pl-pr}" height="${Hh}" fill="transparent" id="hit"/>`;
+  const hit = svg.querySelector("#hit"), xh=svg.querySelector("#xh"), dots=svg.querySelector("#dots");
+  const move = ev=>{
+    const rect = svg.getBoundingClientRect(); const px=(ev.clientX-rect.left)*W/rect.width;
+    const i = Math.max(0,Math.min(times.length-1, Math.round((px-pl)/(W-pl-pr)*(times.length-1))));
+    xh.setAttribute("x1",x(i)); xh.setAttribute("x2",x(i)); xh.setAttribute("visibility","visible");
+    dots.innerHTML = series.filter(s=>s.vals[i]!=null).map(s=>`<circle cx="${x(i)}" cy="${y(s.vals[i])}" r="4.5" fill="var(${s.m.color})" stroke="var(--surface)" stroke-width="2"/>`).join("");
+    const u=UNITS[state.unit].short;
+    tip.innerHTML = `<div class="t">${fmtDay(times[i],{weekday:"long",day:"numeric"})} · ${times[i].slice(11,13)}h</div>` + series.map(s=>`<div class="r"><span><i style="background:var(${s.m.color})"></i>${s.m.short}</span><span>${r0(s.vals[i])} <span style="color:var(--muted)">raf. ${r0(s.gust[i])}</span> ${u}</span></div>`).join("");
+    tip.style.display="block";
+    const left = x(i)*rect.width/W; const tw=tip.offsetWidth;
+    tip.style.left = (left+14+tw>rect.width ? left-tw-14 : left+14)+"px"; tip.style.top="10px";
+  };
+  hit.addEventListener("mousemove",move); hit.addEventListener("touchmove",e=>{move(e.touches[0]);},{passive:true});
+  hit.addEventListener("mouseleave",()=>{tip.style.display="none";xh.setAttribute("visibility","hidden");dots.innerHTML="";});
+}
+let rz; window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>state.data&&drawChart(new Date(new Date().setMinutes(0,0,0))),150)});
+
+renderControls(); load();
+setInterval(load, 30*60*1000); // rafraîchit toutes les 30 min
+</script>
+</body>
+</html>
