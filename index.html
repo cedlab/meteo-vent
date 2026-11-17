@@ -18,7 +18,7 @@
   --bg:#f4f3f0; --surface:#fcfcfb; --surface-2:#f0efec; --border:#e2e1dc;
   --text:#0b0b0b; --text-2:#52514e; --muted:#8a8984;
   --accent:#2a78d6;
-  --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#8a5cd1;
+  --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#8a5cd1; --m6:#d4589b; --m7:#5f7186;
   --grid:#e8e7e2;
   --s100:#cde2fb;--s150:#b7d3f6;--s200:#9ec5f4;--s250:#86b6ef;--s300:#6da7ec;--s350:#5598e7;
   --s400:#3987e5;--s450:#2a78d6;--s500:#256abf;--s550:#1c5cab;--s600:#184f95;--s650:#104281;--s700:#0d366b;
@@ -30,7 +30,7 @@
     --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#33332f;
     --text:#f0efec; --text-2:#c3c2b7; --muted:#8d8c84;
     --accent:#3987e5;
-    --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#9d76e3;
+    --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#9d76e3; --m6:#e06aa8; --m7:#8796aa;
     --grid:#2a2a27;
     --s0:#1f2329;
   }
@@ -243,6 +243,11 @@ header .sub{margin-top:0}
 #results .srow{border-bottom-style:dashed}
 #results .none{padding:12px 4px;color:var(--muted)}
 body.noscroll{overflow:hidden}
+.gkey{display:flex;gap:8px;margin-top:6px}
+.gkey input{flex:1;min-width:0;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);outline:none;font-family:ui-monospace,Menlo,monospace}
+.gkey button{border:0;border-radius:12px;padding:0 16px;background:var(--text);color:var(--surface);font:inherit;font-size:15px;cursor:pointer}
+.gkeymsg{font-size:12.5px;color:var(--muted);margin:6px 4px 0;line-height:1.4}
+.gkeymsg.err{color:#d64545}
 </style>
 </head>
 <body>
@@ -263,6 +268,12 @@ body.noscroll{overflow:hidden}
     <button class="srow geo" id="geoBtn"><span class="sname">📍 Ma position</span><small id="geoMsg">utiliser la localisation du téléphone</small></button>
     <div class="slabel">Mes spots</div>
     <div id="spotList"></div>
+    <div class="slabel">Prévision officielle Google (facultatif)</div>
+    <div class="gkey">
+      <input id="gkey" type="text" placeholder="Clé API Google Weather" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button id="gkeySave">OK</button>
+    </div>
+    <div class="gkeymsg" id="gkeyMsg"></div>
   </div>
 </div>
 <main>
@@ -279,7 +290,7 @@ body.noscroll{overflow:hidden}
   </section>
   <div id="content"></div>
 </main>
-<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine · version du 17/11 19h</footer>
+<footer>Données <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Météo-France AROME/ARPEGE, DWD ICON, NOAA GFS, ECMWF IFS) · houle : Open-Meteo Marine · version du 17/11 19h30</footer>
 
 <script>
 const DEFAULT_SPOTS = [
@@ -293,8 +304,12 @@ const MODELS = [
   {id:"icon_seamless", short:"ICON", label:"ICON (DWD)", color:"--m2"},
   {id:"gfs_seamless", short:"GFS", label:"GFS (NOAA)", color:"--m3"},
   {id:"ecmwf_ifs025", short:"ECMWF", label:"ECMWF IFS", color:"--m4"},
-  {id:"google_wn2", short:"Google", label:"Google WeatherNext 2 (IA, moyenne de 64 scénarios)", color:"--m5", ens:true},
+  {id:"google_wn2", short:"WN2", label:"Google WeatherNext 2 (IA, moyenne de 64 scénarios)", color:"--m5", ens:true},
+  {id:"ecmwf_aifs025_single", short:"AIFS", label:"ECMWF AIFS (IA)", color:"--m7"},
+  {id:"google_api", short:"Google", label:"Google Météo (la prévision affichée par Google)", color:"--m6", gapi:true},
 ];
+// Modèles actifs : la prévision officielle Google n'apparaît que si une clé est enregistrée
+const activeModels = () => MODELS.filter(m=>!m.gapi || store.get("gkey",""));
 // Modèles ajoutés uniquement pour comparer la pluie (Météo-France haute résolution)
 const RAIN_EXTRA = [
   {id:"meteofrance_arome_france_hd", short:"AROME HD", title:"AROME France HD, 1,5 km, ~2 jours"},
@@ -305,7 +320,9 @@ const RAIN_ROWS = [...RAIN_EXTRA.map(m=>({...m,src:"rain"})),
   {id:"icon_seamless", short:"ICON", title:"ICON (DWD)", src:"data"},
   {id:"ecmwf_ifs025", short:"ECMWF", title:"ECMWF IFS", src:"data"},
   {id:"gfs_seamless", short:"GFS", title:"GFS (NOAA)", src:"data"},
-  {id:"google_wn2", short:"Google", title:"Google WeatherNext 2, moyenne de 64 scénarios", src:"data"}];
+  {id:"google_wn2", short:"WN2", title:"Google WeatherNext 2, moyenne de 64 scénarios", src:"data"},
+  {id:"ecmwf_aifs025_single", short:"AIFS", title:"ECMWF AIFS, modèle IA", src:"data"},
+  {id:"google_api", short:"Google", title:"Google Météo (API officielle)", src:"data"}];
 const UNITS = {kn:{label:"nœuds",short:"kn",f:1}, kmh:{label:"km/h",short:"km/h",f:1.852}};
 const HOURLY = "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,cloud_cover,precipitation,is_day";
 
@@ -375,7 +392,7 @@ function arrowSVG(dir, color){
 
 // ---------- Contrôles ----------
 function renderControls(){
-  $("#modelSeg").innerHTML = MODELS.map(m=>`<button data-m="${m.id}" class="${m.id===state.model?"on":""}" title="${m.label}">${m.short}</button>`).join("");
+  $("#modelSeg").innerHTML = activeModels().map(m=>`<button data-m="${m.id}" class="${m.id===state.model?"on":""}" title="${m.label}">${m.short}</button>`).join("");
   $("#unitSeg").innerHTML = Object.entries(UNITS).map(([k,u])=>`<button data-u="${k}" class="${k===state.unit?"on":""}">${u.short}</button>`).join("");
   $("#stepSeg").innerHTML = [1,2,3,6].map(s=>`<button data-s="${s}" class="${s===state.step?"on":""}">${s}h</button>`).join("");
   document.body.classList.toggle("simple", state.view==="simple");
@@ -394,13 +411,18 @@ document.addEventListener("click", e=>{
 
 // ---------- Panneau des spots ----------
 const sheet = $("#sheet");
-function openSheet(){ sheet.hidden=false; document.body.classList.add("noscroll"); $("#q").value=""; $("#results").innerHTML=""; renderSpotList(); }
+function openSheet(){ sheet.hidden=false; document.body.classList.add("noscroll"); $("#q").value=""; $("#results").innerHTML=""; renderSpotList(); renderKeyMsg(); }
 function closeSheet(){ $("#q").blur(); sheet.hidden=true; document.body.classList.remove("noscroll"); }
 function chooseSpot(i){ state.spotIdx=i; store.set("spotIdx",i); state.simpleSel=null; closeSheet(); renderControls(); load(); }
 function addSpot(sp){
   const j = state.spots.findIndex(x=>Math.abs(x.lat-sp.lat)<0.005 && Math.abs(x.lon-sp.lon)<0.005);
   if(j>=0){ chooseSpot(j); return; }
   state.spots.push(sp); store.set("spots",state.spots); chooseSpot(state.spots.length-1);
+}
+function renderKeyMsg(){
+  const k=store.get("gkey",""), m=$("#gkeyMsg"); $("#gkey").value = k ? "•••• "+k.slice(-4) : "";
+  m.className = "gkeymsg"+(state.gErr&&k?" err":"");
+  m.textContent = !k ? "Ajoute ta clé pour avoir la même prévision que sur Google (bouton « Google »). Elle reste sur ce téléphone." : state.gErr ? `Google refuse : ${state.gErr}` : (state.data?.google_api ? "✓ Clé active, prévision Google chargée." : "Clé enregistrée.");
 }
 function renderSpotList(){
   $("#spotList").innerHTML = state.spots.map((sp,i)=>`
@@ -411,6 +433,13 @@ function renderSpotList(){
     </div>`).join("");
 }
 $("#spotBtn").onclick = openSheet;
+$("#gkey").addEventListener("focus", e=>{ if(e.target.value.startsWith("••••")) e.target.value=""; });
+$("#gkeySave").onclick = async ()=>{
+  const v=$("#gkey").value.trim(); if(v.startsWith("••••")) return;
+  store.set("gkey", v); state.gErr=null; $("#gkey").blur(); $("#gkeyMsg").textContent = v ? "Vérification…" : "Clé retirée.";
+  if(!v && state.model==="google_api"){ state.model="meteofrance_seamless"; store.set("model",state.model); }
+  renderControls(); await load(); renderKeyMsg();
+};
 $("#sheetBg").onclick = closeSheet; $("#sheetClose").onclick = closeSheet;
 $("#spotList").addEventListener("click", e=>{
   const del = e.target.closest("[data-sdel]");
@@ -448,6 +477,39 @@ $("#geoBtn").onclick = ()=>{
   }, err=>{ msg.textContent = err.code===1 ? "accès refusé : autorise la localisation pour Safari dans Réglages" : "position introuvable, réessaie"; }, {enableHighAccuracy:false, timeout:10000, maximumAge:600000});
 };
 
+
+// ---------- Google Météo (API officielle, clé personnelle) ----------
+// 5 pages de 24 h = 5 appels, mis en cache 1 h par spot pour rester très en dessous du quota gratuit.
+async function googleForecast(spot){
+  const key = store.get("gkey",""); if(!key) return null;
+  const ck = `gcache_${spot.lat.toFixed(3)}_${spot.lon.toFixed(3)}`;
+  const c = store.get(ck, null); if(c && Date.now()-c.ts < 3600e3 && c.key===key.slice(-6)) { state.gErr=null; return {hourly:c.h}; }
+  const hours = []; let tok = "";
+  try{
+    for(let page=0; page<5; page++){
+      const url = `https://weather.googleapis.com/v1/forecast/hours:lookup?key=${encodeURIComponent(key)}&location.latitude=${spot.lat}&location.longitude=${spot.lon}&hours=120&pageSize=24&languageCode=fr${tok?`&pageToken=${encodeURIComponent(tok)}`:""}`;
+      const r = await fetch(url); const j = await r.json();
+      if(!r.ok){ state.gErr = j?.error?.message || `erreur ${r.status}`; return null; }
+      hours.push(...(j.forecastHours||[])); tok = j.nextPageToken; if(!tok) break;
+    }
+  }catch(e){ state.gErr = "pas de réponse de Google"; return null; }
+  state.gErr = null;
+  const pad=n=>String(n).padStart(2,"0");
+  const H = {time:[], wind_speed_10m:[], wind_gusts_10m:[], wind_direction_10m:[], temperature_2m:[], cloud_cover:[], precipitation:[], is_day:[], rain_prob:[], cond:[]};
+  hours.forEach(f=>{
+    const d = new Date(f.interval?.startTime); if(isNaN(d)) return;
+    H.time.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`);
+    const kmh2kn = v => v==null?null:v/1.852;
+    H.wind_speed_10m.push(kmh2kn(f.wind?.speed?.value)); H.wind_gusts_10m.push(kmh2kn(f.wind?.gust?.value));
+    H.wind_direction_10m.push(f.wind?.direction?.degrees ?? null);
+    H.temperature_2m.push(f.temperature?.degrees ?? null); H.cloud_cover.push(f.cloudCover ?? null);
+    H.precipitation.push(f.precipitation?.qpf?.quantity ?? 0); H.is_day.push(f.isDaytime===false?0:1);
+    const pr = f.precipitation?.probability?.percent; H.rain_prob.push(pr==null?null:pr/100);
+    H.cond.push(f.weatherCondition?.description?.text || null);
+  });
+  store.set(ck, {ts:Date.now(), key:key.slice(-6), h:H});
+  return {hourly:H};
+}
 
 // ---------- Google WeatherNext 2 : 64 scénarios toutes les 6 h → série horaire ----------
 // Moyenne des scénarios (vent, température, nuages), pluie du bloc de 6 h répartie sur les heures,
@@ -493,7 +555,8 @@ async function load(){
   $("#subtitle").textContent = spot.sub || `${spot.lat.toFixed(2)}°, ${spot.lon.toFixed(2)}°`;
   $("#tableArea").innerHTML = `<div class="status">Chargement des modèles…</div>`; $("#content").innerHTML = ""; $("#simple").innerHTML = `<div class="card"><div class="status">Chargement…</div></div>`;
   const base = `latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&wind_speed_unit=kn`;
-  const reqs = MODELS.map(m=> m.ens
+  const AM = activeModels();
+  const reqs = AM.map(m=> m.gapi ? googleForecast(spot) : m.ens
     ? getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${base}&temporal_resolution=native&hourly=wind_speed_10m,wind_direction_10m,temperature_2m,precipitation,cloud_cover&models=google_weathernext2_ensemble`).then(j=>j&&j.hourly?{hourly:ensembleToHourly(j.hourly)}:null).catch(()=>null)
     : getJSON(`https://api.open-meteo.com/v1/forecast?${base}&hourly=${HOURLY}&models=${m.id}`).catch(()=>null));
   const marineReq = getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${spot.lat}&longitude=${spot.lon}&timezone=Europe%2FParis&forecast_days=${state.days}&hourly=wave_height,wave_period,wave_direction`).catch(()=>null);
@@ -503,7 +566,7 @@ async function load(){
   state.rain = {}; RAIN_EXTRA.forEach((m,i)=>{ if(rainRes[i]&&rainRes[i].hourly) state.rain[m.id]=rainRes[i].hourly; });
   state.now15 = now15&&now15.minutely_15 ? now15.minutely_15 : null;
   if(spot !== state.spots[state.spotIdx]) return; // spot changé entre-temps
-  state.data = {}; MODELS.forEach((m,i)=>{ if(res[i]&&res[i].hourly) state.data[m.id]=res[i].hourly; });
+  state.data = {}; AM.forEach((m,i)=>{ if(res[i]&&res[i].hourly) state.data[m.id]=res[i].hourly; });
   state.marine = marine&&marine.hourly ? marine.hourly : null;
   if(!Object.keys(state.data).length){ $("#simple").innerHTML = `<div class="card"><div class="status err">Impossible de récupérer les prévisions.</div></div>`; $("#tableArea").innerHTML = `<div class="status err">Impossible de récupérer les prévisions.</div><div class="status">Si tu regardes cette page dans l'aperçu de Claude, c'est normal : l'aperçu bloque l'accès à Internet.<br>Télécharge le fichier et ouvre-le dans Safari, Chrome ou Firefox.</div>`; return; }
   render();
@@ -620,8 +683,11 @@ function renderSimple(H){
     const wet=Object.entries(c).filter(([k])=>SKY_RANK[k]>=4); if(wet.reduce((a,[,n])=>a+n,0)>=2) return wet.sort((a,b)=>b[1]-a[1])[0][0];
     const e=Object.entries(c).sort((a,b)=>b[1]-a[1]||SKY_RANK[b[0]]-SKY_RANK[a[0]])[0][0]; return e==="night"?"clear":e==="nightpartly"?"partly":e; }
   const fmtMm = r => r<10 ? r.toFixed(1).replace(".",",") : Math.round(r);
-  const GD = state.data?.google_wn2; const gIdx = GD ? Object.fromEntries(GD.time.map((t,i)=>[t,i])) : {};
-  const googleProb = t => { const j=gIdx[t]; return GD&&j!=null ? GD.rain_prob[j] : null; };
+  const GA = state.data?.google_api, GW = state.data?.google_wn2;
+  const gaIdx = GA ? Object.fromEntries(GA.time.map((t,i)=>[t,i])) : {}, gwIdx = GW ? Object.fromEntries(GW.time.map((t,i)=>[t,i])) : {};
+  const googleProb = t => { let j=gaIdx[t]; if(GA&&j!=null&&GA.rain_prob[j]!=null) return GA.rain_prob[j]; j=gwIdx[t]; return GW&&j!=null ? GW.rain_prob[j] : null; };
+  const googleSrc = GA ? "Google" : "Google, 64 scénarios";
+  const googleCond = t => { const j=gaIdx[t]; return GA&&j!=null ? GA.cond[j] : null; };
 
   // résumé matin / après-midi / soir d'un jour
   function daySummary(d){
@@ -689,15 +755,15 @@ function renderSimple(H){
     const when = k===kNow ? "Maintenant" : `${fmtDay(d+"T12:00",{weekday:"long",day:"numeric",month:"long"})} · ${hourOf(i)}h`;
     const lw = localWind(dir, H.wind_speed_10m[i]);
     const gp = googleProb(H.time[i]);
-    const rainTxt = (r>=0.1 ? `💧 ${fmtMm(r)} mm` : (a&&a.wet ? `💧 pluie possible (${a.wet}/${a.n} modèles)` : `sec`)) + (gp!=null && gp>=0.1 ? ` · risque ${Math.round(gp*100)} % (Google)` : "");
+    const rainTxt = (r>=0.1 ? `💧 ${fmtMm(r)} mm` : (a&&a.wet ? `💧 pluie possible (${a.wet}/${a.n} modèles)` : `sec`)) + (gp!=null && gp>=0.1 ? ` · risque ${Math.round(gp*100)} % (${GA?"Google":"WN2"})` : "");
     $("#sHead").innerHTML = `<div class="sw">${when}</div>
       <div class="sbig">${skyIcon(ks).replace("<svg","<svg class=\"ico\"")}<span class="stemp">${r0(H.temperature_2m[i])}°</span>
-        <div class="sright"><div class="sdesc">${SKY_TXT[ks]}</div><div class="sminmax">${r0(o.hi)}° / ${r0(o.lo)}°</div></div></div>
+        <div class="sright"><div class="sdesc">${SKY_TXT[ks]}</div>${googleCond(H.time[i])?`<div class="sminmax" style="font-size:11.5px">Google : ${googleCond(H.time[i])}</div>`:""}<div class="sminmax">${r0(o.hi)}° / ${r0(o.lo)}°</div></div></div>
       <div class="sline">${arrowSVG(dir,"var(--text-2)")} ${windWords(w)} ${dirLong(dir)}${lw==="Mistral"?" (Mistral)":""} · ${Math.round(w)} km/h${g!=null?`, rafales ${Math.round(g)}`:""} · ${rainTxt}</div>`;
     if(d!==curDay){ curDay=d; dc.forEach(c=>c.classList.toggle("on", c.dataset.day===d));
       const chip=dc.find(c=>c.dataset.day===d); if(chip){ const box=$("#dchips"); const l=chip.offsetLeft-box.clientWidth/2+chip.offsetWidth/2; box.scrollTo({left:l,behavior:"smooth"}); }
       const tips=tipsFor(d), lab = d===today?"Aujourd'hui":fmtDay(d+"T12:00",{weekday:"long",day:"numeric"});
-      $("#sDay").innerHTML = `<h2 style="text-transform:none">${lab.charAt(0).toUpperCase()+lab.slice(1)}</h2>${(()=>{const sn=sunFor(d);return sn?`<div class="sunline">🌅 Lever ${sn.riseTxt} · 🌇 Coucher ${sn.setTxt}${sn.nightTxt?` · 🌙 Nuit complète ${sn.nightTxt}`:""} · ${sn.lenTxt} de jour</div>`:""})()}<div class="summary">${daySummary(d)||""}</div>${(()=>{ const ps=days[d].ks.map(k=>googleProb(H.time[hrs[k]])).filter(v=>v!=null); if(!ps.length) return ""; const pm=Math.max(...ps); return `<div class="sunline" style="margin-top:6px">🎲 Risque de pluie ${Math.round(pm*100)} % <span style="color:var(--muted)">(Google, 64 scénarios)</span></div>`; })()}${tips.length?`<div class="tips" style="margin-top:8px">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div>`:""}`; }
+      $("#sDay").innerHTML = `<h2 style="text-transform:none">${lab.charAt(0).toUpperCase()+lab.slice(1)}</h2>${(()=>{const sn=sunFor(d);return sn?`<div class="sunline">🌅 Lever ${sn.riseTxt} · 🌇 Coucher ${sn.setTxt}${sn.nightTxt?` · 🌙 Nuit complète ${sn.nightTxt}`:""} · ${sn.lenTxt} de jour</div>`:""})()}<div class="summary">${daySummary(d)||""}</div>${(()=>{ const ps=days[d].ks.map(k=>googleProb(H.time[hrs[k]])).filter(v=>v!=null); if(!ps.length) return ""; const pm=Math.max(...ps); return `<div class="sunline" style="margin-top:6px">🎲 Risque de pluie ${Math.round(pm*100)} % <span style="color:var(--muted)">(${googleSrc})</span></div>`; })()}${tips.length?`<div class="tips" style="margin-top:8px">${tips.map(([e,t,c])=>`<span class="tip ${c||""}">${e} ${t}</span>`).join("")}</div>`:""}`; }
     state.simpleSel = H.time[i];
   }
   const kFromScroll = () => Math.max(0, Math.min(hc.length-1, Math.round(sc.scrollLeft / colW())));
@@ -800,8 +866,8 @@ function render(){
       rowsRain += `<tr class="rm"><th class="lab" title="${r.title}">${r.short}</th>${cols.map((c,k)=>{ const v=vals[k]; if(v==null) return cell(c,"","na"); return v>=0.1?colored(c,"rain",v/state.step,v<1?v.toFixed(1):Math.round(v)):cell(c,""); }).join("")}</tr>`;
     });
     rowsRain += `<tr class="rm"><th class="lab" title="Nombre de modèles qui prévoient au moins 0,2 mm">Accord</th>${cols.map((c,k)=>{ const avail=series.filter(x=>x.vals[k]!=null); if(!avail.length) return cell(c,"","na"); const n=avail.filter(x=>x.vals[k]>=0.2).length; if(!n) return cell(c,`<span style="color:var(--muted);font-size:9.5px">0/${avail.length}</span>`); const f=n/avail.length; return cell(c,`${n}/${avail.length}`,"w",`background:rgba(110,110,250,${(0.15+0.75*f).toFixed(2)});color:${f>0.6?"#fff":"var(--text)"};font-size:10px`); }).join("")}</tr>`;
-    const G = state.data?.google_wn2; if(G && G.rain_prob){ const gm=Object.fromEntries(G.time.map((t,i)=>[t,i]));
-      rowsRain += `<tr class="rm"><th class="lab" title="Google WeatherNext 2 : part des 64 scénarios avec au moins 0,5 mm sur 6 h">Proba<small>Google</small></th>${cols.map(c=>{ let pmax=null; for(let k=0;k<state.step;k++){ const j=gm[H.time[c.i+k]]; const v=j!=null?G.rain_prob[j]:null; if(v!=null) pmax=Math.max(pmax??0,v); } if(pmax==null) return cell(c,"","na"); if(pmax<0.05) return cell(c,`<span style="color:var(--muted);font-size:9.5px">0</span>`); return cell(c,`${Math.round(pmax*100)}`,"w",`background:rgba(110,110,250,${(0.12+0.78*pmax).toFixed(2)});color:${pmax>0.6?"#fff":"var(--text)"};font-size:10px`); }).join("")}</tr>`; }
+    for(const [gid,gname,gtitle] of [["google_api","Google","Google Météo : probabilité de pluie annoncée"],["google_wn2","WN2","Google WeatherNext 2 : part des 64 scénarios avec au moins 0,5 mm sur 6 h"]]){ const G = state.data?.[gid]; if(!G || !G.rain_prob) continue; const gm=Object.fromEntries(G.time.map((t,i)=>[t,i]));
+      rowsRain += `<tr class="rm"><th class="lab" title="${gtitle}">Proba<small>${gname}</small></th>${cols.map(c=>{ let pmax=null; for(let k=0;k<state.step;k++){ const j=gm[H.time[c.i+k]]; const v=j!=null?G.rain_prob[j]:null; if(v!=null) pmax=Math.max(pmax??0,v); } if(pmax==null) return cell(c,"","na"); if(pmax<0.05) return cell(c,`<span style="color:var(--muted);font-size:9.5px">0</span>`); return cell(c,`${Math.round(pmax*100)}`,"w",`background:rgba(110,110,250,${(0.12+0.78*pmax).toFixed(2)});color:${pmax>0.6?"#fff":"var(--text)"};font-size:10px`); }).join("")}</tr>`; }
   }
 
   // Bandeau pluie dans les 4 prochaines heures (AROME au quart d'heure)
